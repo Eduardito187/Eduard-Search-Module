@@ -1,0 +1,21 @@
+{
+    "name": "eduard/search",
+    "description": "Search module for Laravel",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Eduard\\Search\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Eduard\\Search\\SearchServiceProvider"
+            ]
+        }
+    }
+}
