@@ -2,30 +2,30 @@
 
 namespace Eduard\Search\Helpers\Search;
 
-use Eduard\Search\Events\IndexationProccess;
-use Eduard\Search\Models\Attributes;
-use Eduard\Search\Models\AttributeSearch;
-use Eduard\Search\Models\IndexCatalog;
 use Exception;
-use Eduard\Search\Models\IndexConfiguration;
+use Illuminate\Support\Str;
+use Eduard\Search\Models\Media;
 use Eduard\Search\Models\Product;
-use Eduard\Search\Models\ProductAttribute;
-use Eduard\Search\Models\ProductIndex;
-use Eduard\Account\Helpers\System\CoreHttp;
+use Eduard\Search\Models\Attributes;
 use Eduard\Search\Models\AccessIndex;
-use Eduard\Search\Models\AttributesRulesExclude;
+use Eduard\Search\Models\SortingType;
+use Illuminate\Support\Facades\Event;
+use Eduard\Search\Models\IndexCatalog;
+use Eduard\Search\Models\ProductIndex;
+use Eduard\Search\Models\ProductMedia;
+use Eduard\Search\Models\TypeAttribute;
+use Eduard\Search\Models\IndexProducts;
+use Eduard\Search\Models\RankingSorting;
+use Eduard\Search\Models\AttributeSearch;
+use Eduard\Search\Models\ProductAttribute;
+use Eduard\Search\Models\FiltersAttributes;
+use Eduard\Account\Helpers\System\CoreHttp;
+use Eduard\Search\Models\IndexConfiguration;
 use Eduard\Account\Models\AutorizationToken;
 use Eduard\Search\Models\ConditionsExcludes;
-use Eduard\Search\Models\FiltersAttributes;
-use Eduard\Search\Models\Media;
-use Eduard\Search\Models\ProductMedia;
-use Eduard\Search\Models\RankingSorting;
-use Eduard\Search\Models\SortingType;
-use Eduard\Search\Models\TypeAttribute;
-use Illuminate\Support\Str;
+use Eduard\Search\Events\IndexationProccess;
+use Eduard\Search\Models\AttributesRulesExclude;
 use Eduard\Search\Helpers\Search\Core as CoreSearch;
-use Eduard\Search\Models\IndexProducts;
-use Illuminate\Support\Facades\Event;
 
 class Import
 {
@@ -150,6 +150,7 @@ class Import
             $newProductIndex->status = true;
             $newProductIndex->updated_at = date("Y-m-d H:i:s");
             $newProductIndex->save();
+            $this->incrementIndexProductCount();
         }
     }
 
@@ -1156,6 +1157,7 @@ class Import
                 if ($updateProduct != null) {
                     $this->productProccess[] = $updateProduct->id;
                     $this->setProductMedia($updateProduct->id, $idIndex, $product["image"]);
+                    $this->createProductIndex($updateProduct, $idIndex);
 
                     if (isset($product["attributes"]) && is_array($product["attributes"])) {
                         $this->updateAttributes($product["attributes"], $updateProduct, $idIndex);
@@ -1176,8 +1178,6 @@ class Import
                     if (isset($product["attributes"]) && is_array($product["attributes"])) {
                         $this->updateAttributes($product["attributes"], $newProduct, $idIndex);
                     }
-
-                    $this->incrementIndexProductCount();
                 }
             }
         }
