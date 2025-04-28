@@ -79,7 +79,7 @@ class Core
             $responseProductIds = [];
 
             if ($backupQuery == null) {
-                $idProductList = $this->searchInIndexProductsTake($index->id, $query, 6);
+                $idProductList = $this->searchInIndexProducts($index->id, $query);
 
                 if (count($idProductList) > 0) {
                     $this->setBackupQuery($index->id, $customerUuid, $query, $idProductList, $filters);
