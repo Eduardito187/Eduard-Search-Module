@@ -59,6 +59,9 @@ class Core
             $filters = null;
             $index = $this->getIndexByApiKey($header["api-key"][0]);
             $customerUuid = $header["customer-uuid"][0];
+            $limit_search = $body["limit_search"] ?? $this->indexConfiguration->limit_product_feed;
+            $suggestions_limit = $body["suggestions_limit"] ?? 0;
+            $history_limit = $body["history_limit"] ?? 0;
 
             if ($index->count_product == 0) {
                 throw new Exception("El indice no cuenta con productos disponible para su busqueda.");
@@ -85,14 +88,14 @@ class Core
                     $this->setBackupQuery($index->id, $customerUuid, $query, $idProductList, $filters);
                 }
 
-                $responseProductIds = array_slice($idProductList, 0, $this->indexConfiguration->limit_product_feed);
+                $responseProductIds = array_slice($idProductList, 0, $limit_search);
 
                 if (count($responseProductIds) > 0) {
                     $this->setHistoryResult($index->id, $customerUuid, $query, $responseProductIds);
                 }
             } else {
                 $idProductList = json_decode($backupQuery->list_products);
-                $responseProductIds = array_slice($idProductList, 0, $this->indexConfiguration->limit_product_feed);
+                $responseProductIds = array_slice($idProductList, 0, $limit_search);
             }
 
             $responseProducts = $this->responseProducts($responseProductIds, $index, true);
@@ -111,8 +114,11 @@ class Core
             );
 
             $suggestionTimeStart = microtime(true);
-            $suggestionResponse = $this->getSuggestionQuery($index->id, $customerUuid, $query);
+            $suggestionResponse = $this->getSuggestionQuery($index->id, $customerUuid, $query, $suggestions_limit);
             $suggestionTimeEnd = microtime(true);
+            $historyTimeStart = microtime(true);
+            $historyResponse = $this->getBackupHistory($index->id, $customerUuid, $history_limit);
+            $historyTimeEnd = microtime(true);
 
             Event::dispatch(
                 new SearchProccess(
@@ -126,12 +132,25 @@ class Core
                 )
             );
 
+            Event::dispatch(
+                new SearchProccess(
+                    $index->id_client,
+                    $index->id,
+                    $customerUuid,
+                    $query,
+                    count($historyResponse),
+                    (($historyTimeEnd - $historyTimeStart) * 1000),
+                    "history_feed_response"
+                )
+            );
+
             return $this->coreHttp->constructResponse(
                 [
                     "products" => $responseProducts,
                     "count" => count($responseProductIds),
                     "total" => count($idProductList),
-                    "suggestion" => $suggestionResponse
+                    "suggestion" => $suggestionResponse,
+                    "history" => $historyResponse
                 ],
                 "Proceso ejecutado exitosamente.",
                 200,
@@ -766,6 +785,14 @@ class Core
     /**
      * @inheritDoc
      */
+    public function getBackupHistory($idIndex, $customer, $history_limit)
+    {
+        return BackupQuery::where('id_index', $idIndex)->where('customer_uuid', $customer)->pluck('query')->unique()->values()->take($history_limit)->toArray();
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function setBackupQuery($idIndex, $customer, $query, $resultProducts, $filters)
     {
         $newItem = new BackupQuery();
@@ -795,10 +822,10 @@ class Core
     /**
      * @inheritDoc
      */
-    public function getSuggestionQuery($index, $customer, $query)
+    public function getSuggestionQuery($index, $customer, $query, $suggestions_limit)
     {
         return HistoryCustomer::where('customer_uuid', $customer)
         ->where('id_index', $index)->where('query', 'like', '%' . $query . '%')->where('query', '!=', $query)
-        ->pluck('query')->unique()->values()->take(6)->toArray();
+        ->pluck('query')->unique()->values()->take($suggestions_limit)->toArray();
     }
 }
