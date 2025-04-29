@@ -7,6 +7,8 @@ use Eduard\Search\Events\SearchProccess;
 use Eduard\Search\Events\IndexationProccess;
 use Eduard\Search\Listeners\AfterSearchProccess;
 use Eduard\Search\Listeners\AfterIndexationProccess;
+use Eduard\Search\Models\Product;
+use Eduard\Search\Observers\ProductObserver;
 
 class SearchServiceProvider extends ServiceProvider
 {
@@ -41,6 +43,8 @@ class SearchServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        Product::observe(ProductObserver::class);
+
         // Registrar eventos y sus listeners
         $this->registerEvents();
 
