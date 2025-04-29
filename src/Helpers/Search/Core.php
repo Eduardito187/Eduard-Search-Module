@@ -18,8 +18,10 @@ use Eduard\Search\Models\FiltersAttributes;
 use Eduard\Search\Models\HistoryCustomer;
 use Eduard\Search\Models\IndexProducts;
 use Eduard\Search\Models\ProductIndex;
+use Eduard\Search\Models\ProductVectors;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\DB;
 
 class Core
 {
@@ -114,10 +116,10 @@ class Core
             );
 
             $suggestionTimeStart = microtime(true);
-            $suggestionResponse = $this->getSuggestionQuery($index->id, $customerUuid, $query, $suggestions_limit);
+            $suggestionResponse = $this->getSuggestionQuery($query, $suggestions_limit);
             $suggestionTimeEnd = microtime(true);
             $historyTimeStart = microtime(true);
-            $historyResponse = $this->getBackupHistory($index->id, $customerUuid, $history_limit);
+            $historyResponse = $this->getBackupHistory($index->id, $customerUuid, $query, $history_limit);
             $historyTimeEnd = microtime(true);
 
             Event::dispatch(
@@ -770,10 +772,19 @@ class Core
     /**
      * @inheritDoc
      */
+    public function deleteBackupHistory($id)
+    {
+        DB::table('backup_query')->whereRaw("list_products LIKE CONCAT('%,', ?, ',%')", [$id])
+        ->orWhereRaw("list_products LIKE CONCAT('[', ?, ',%')", [$id])->orWhereRaw("list_products LIKE CONCAT('%,', ?, ']')", [$id])
+        ->orWhereRaw("list_products LIKE CONCAT('[', ?, ']')", [$id])->orWhereRaw("list_products = ?", [$id])->delete();
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function getBackupQuery($idIndex, $customer, $query, $resultProducts, $filters)
     {
-        $backup = BackupQuery::where('id_index', $idIndex)->where('customer_uuid', $customer)->where('query', $query)
-            ->where('filters', json_encode($filters))->first();
+        $backup = BackupQuery::where('id_index', $idIndex)->where('query', $query)->where('filters', json_encode($filters))->first();
 
         if (!$backup) {
             return null;
@@ -785,9 +796,10 @@ class Core
     /**
      * @inheritDoc
      */
-    public function getBackupHistory($idIndex, $customer, $history_limit)
+    public function getBackupHistory($idIndex, $customer, $query, $history_limit)
     {
-        return BackupQuery::where('id_index', $idIndex)->where('customer_uuid', $customer)->pluck('query')->unique()->values()->take($history_limit)->toArray();
+        return BackupQuery::where('id_index', $idIndex)->where('customer_uuid', $customer)->where('query', 'like', '%' . $query . '%')->
+            where('query', '!=', $query)->pluck('query')->unique()->values()->take($history_limit)->toArray();
     }
 
     /**
@@ -822,10 +834,91 @@ class Core
     /**
      * @inheritDoc
      */
-    public function getSuggestionQuery($index, $customer, $query, $suggestions_limit)
+    public function getSuggestionQuery($query, $limite)
     {
-        return HistoryCustomer::where('customer_uuid', $customer)
-        ->where('id_index', $index)->where('query', 'like', '%' . $query . '%')->where('query', '!=', $query)
-        ->pluck('query')->unique()->values()->take($suggestions_limit)->toArray();
+        $tokensBusqueda = $this->tokenizar($query);
+
+        if (empty($tokensBusqueda)) return [];
+
+        $tokensBusqueda = array_map('strtolower', $tokensBusqueda);
+        $resultados = [];
+        $productos = ProductVectors::with('product')->get();
+
+        foreach ($productos as $registro) {
+            $coincide = false;
+
+            foreach ($tokensBusqueda as $tokenBuscado) {
+                foreach (array_keys($registro->vector) as $tokenVector) {
+                    if (stripos($tokenVector, $tokenBuscado) !== false) {
+                        $coincide = true;
+                        break 2;
+                    }
+                }
+            }
+
+            if ($coincide && isset($registro->product)) {
+                $resultados[] = $registro->product->name;
+            }
+
+            if (count($resultados) >= $limite) break;
+        }
+
+        return $resultados;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function vectorization($product)
+    {
+        $this->deleteBackupHistory($product->id);
+        $texto = implode(' ', array_filter([
+            $product->name,
+            $product->sku
+        ]));
+
+        $tokens = $this->tokenizar($texto);
+        $tf = $this->calcularTF($tokens);
+        $idf = array_fill_keys(array_keys($tf), 1);
+        $vector = $this->vectorizar($tf, $idf);
+
+        ProductVectors::updateOrCreate(
+            ['product_id' => $product->id],
+            ['vector' => $vector]
+        );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    private function tokenizar(string $texto): array
+    {
+        $limpio = strtolower(preg_replace('/[^a-z0-9áéíóúñ ]/i', '', $texto));
+        return array_filter(explode(' ', $limpio));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    private function calcularTF(array $tokens): array
+    {
+        $frecuencia = array_count_values($tokens);
+        $total = count($tokens);
+        foreach ($frecuencia as &$valor) {
+            $valor = $valor / $total;
+        }
+        return $frecuencia;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    private function vectorizar(array $tf, array $idf): array
+    {
+        $vector = [];
+        foreach ($idf as $palabra => $idfVal) {
+            $vector[$palabra] = ($tf[$palabra] ?? 0) * $idfVal;
+        }
+        return $vector;
     }
 }
