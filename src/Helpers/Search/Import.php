@@ -532,7 +532,7 @@ class Import
     {
         $attributesSearch = $this->coreSearch->getSearchAttributesByIndex($index);
 
-        foreach ($productProccess as $productId) {
+        foreach ($productProccess as $key => $productId) {
             $indexValues = [];
 
             foreach ($attributesSearch as $attributeSearchable) {
@@ -551,7 +551,7 @@ class Import
                 $this->coreSearch->getProductInfoBasic($productId),
             );
             $this->deleteIndexProduct($index->id, $productId);
-            $this->savedIndex($productId, $index->id, $indexValues);
+            $this->savedIndex($productId, $index->id, $indexValues, $key);
         }
     }
 
@@ -639,7 +639,7 @@ class Import
     /**
      * @inheritDoc
      */
-    public function savedIndex(int $idProduct, int $idIndex, array $listValue = [])
+    public function savedIndex(int $idProduct, int $idIndex, array $listValue = [], int $key = 0)
     {
         foreach ($listValue as $value) {
             try {
@@ -648,6 +648,7 @@ class Import
                 $newIndexProducts->id_index_catalog = $idIndex;
                 $newIndexProducts->value = $value;
                 $newIndexProducts->status = 1;
+                $newIndexProducts->index_priority = $key;
                 $newIndexProducts->created_at = date("Y-m-d H:i:s");
                 $newIndexProducts->updated_at = null;
                 $newIndexProducts->save();
@@ -1146,6 +1147,8 @@ class Import
             (isset($product["name"]) && isset($product["sku"]) && isset($product["image"])) &&
             (is_string($product["name"]) && is_string($product["sku"]) && is_string($product["image"]))
         ) {
+            $priorityOrder = $product["value_suscription"] ?? 0;
+
             if ($this->existProduct($product["sku"], $currentClient->id)) {
                 $updateProduct = $this->updateProduct(
                     $product["name"],
@@ -1155,7 +1158,7 @@ class Import
                 );
 
                 if ($updateProduct != null) {
-                    $this->productProccess[] = $updateProduct->id;
+                    $this->productProccess[$priorityOrder] = $updateProduct->id;
                     $this->setProductMedia($updateProduct->id, $idIndex, $product["image"]);
                     $this->createProductIndex($updateProduct, $idIndex);
 
@@ -1171,7 +1174,7 @@ class Import
                 );
 
                 if ($newProduct != null) {
-                    $this->productProccess[] = $newProduct->id;
+                    $this->productProccess[$priorityOrder] = $newProduct->id;
                     $this->setProductMedia($newProduct->id, $idIndex, $product["image"]);
                     $this->createProductIndex($newProduct, $idIndex);
 
