@@ -12,7 +12,7 @@ class IndexProducts extends Model
     use HasFactory;
 
     protected $table = 'index_products';
-    protected $fillable = ['id_product', 'id_index_catalog', 'value', 'status'];
+    protected $fillable = ['id_product', 'id_index_catalog', 'value', 'status', 'index_priority'];
     protected $hidden = ['created_at', 'updated_at'];
     protected $primaryKey = 'id';
     public $incrementing = true;
