@@ -555,7 +555,6 @@ class Import
                 $indexValues,
                 $this->coreSearch->getProductInfoBasic($productId),
             );
-            $this->deleteIndexProduct($index->id, $productId);
             $this->savedIndex($productId, $index->id, $indexValues, $item["priority"]);
         }
     }
@@ -636,27 +635,25 @@ class Import
     /**
      * @inheritDoc
      */
-    public function deleteIndexProduct($idIndex, $idProduct)
-    {
-        return IndexProducts::where('id_index_catalog', $idIndex)->where('id_product', $idProduct)->delete();
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function savedIndex(int $idProduct, int $idIndex, array $listValue = [], $priority = 0)
     {
         foreach ($listValue as $value) {
             try {
-                $newIndexProducts = new IndexProducts();
-                $newIndexProducts->id_product = $idProduct;
-                $newIndexProducts->id_index_catalog = $idIndex;
-                $newIndexProducts->value = $value;
-                $newIndexProducts->status = 1;
-                $newIndexProducts->index_priority = $priority;
-                $newIndexProducts->created_at = date("Y-m-d H:i:s");
-                $newIndexProducts->updated_at = null;
-                $newIndexProducts->save();
+                $indexProduct = IndexProducts::where('id_index_catalog', $idIndex)->where('id_product', $idProduct)->first();
+    
+                if (!$indexProduct) {
+                    $indexProduct = new IndexProducts();
+                    $indexProduct->created_at = now();
+                } else {
+                    $indexProduct->updated_at = now();
+                }
+
+                $indexProduct->id_product = $idProduct;
+                $indexProduct->id_index_catalog = $idIndex;
+                $indexProduct->value = $value;
+                $indexProduct->status = 1;
+                $indexProduct->index_priority = $priority;
+                $indexProduct->save();
             } catch (Exception $e) {
                 return null;
             }
