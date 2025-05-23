@@ -556,7 +556,7 @@ class Import
                 $this->coreSearch->getProductInfoBasic($productId),
             );
             $this->deleteIndexProduct($index->id, $productId);
-            $this->savedIndex($productId, $index->id, $indexValues);
+            $this->savedIndex($productId, $index->id, $indexValues, $item["priority"]);
         }
     }
 
@@ -644,7 +644,7 @@ class Import
     /**
      * @inheritDoc
      */
-    public function savedIndex(int $idProduct, int $idIndex, array $listValue = [])
+    public function savedIndex(int $idProduct, int $idIndex, array $listValue = [], $priority = 0)
     {
         foreach ($listValue as $value) {
             try {
@@ -653,7 +653,7 @@ class Import
                 $newIndexProducts->id_index_catalog = $idIndex;
                 $newIndexProducts->value = $value;
                 $newIndexProducts->status = 1;
-                $newIndexProducts->index_priority = 0;
+                $newIndexProducts->index_priority = $priority;
                 $newIndexProducts->created_at = date("Y-m-d H:i:s");
                 $newIndexProducts->updated_at = null;
                 $newIndexProducts->save();
