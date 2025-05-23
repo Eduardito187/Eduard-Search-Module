@@ -5,6 +5,7 @@ namespace Eduard\Search\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Eduard\Search\Models\ProductMedia;
+use Eduard\Search\Models\IndexProducts;
 
 class Product extends Model
 {
@@ -23,5 +24,12 @@ class Product extends Model
      */
     public function productMedia() {
         return $this->hasMany(ProductMedia::class, 'id_product', 'id');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getIndexSearch() {
+        return $this->hasMany(IndexProducts::class, 'id_product', 'id');
     }
 }
