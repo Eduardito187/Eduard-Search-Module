@@ -45,6 +45,11 @@ class Import
     protected $productProccess = [];
 
     /**
+     * @var array
+     */
+    protected $productProccessId = [];
+
+    /**
      * @var CoreSearch
      */
     protected $coreSearch;
@@ -196,7 +201,7 @@ class Import
             $client = $this->indexConfiguration->indexCatalog->client;
             $this->importProduct($params, $client, $this->indexConfiguration->id_index_catalog);
             $this->createdIndexList($this->productProccess, $this->indexConfiguration->indexCatalog);
-            $this->diabledProductList($this->productProccess, $this->indexConfiguration->indexCatalog);
+            $this->diabledProductList($this->productProccessId, $this->indexConfiguration->indexCatalog);
 
             Event::dispatch(
                 new IndexationProccess(
@@ -508,7 +513,7 @@ class Import
             }
 
             $this->createdIndexList($this->productProccess, $this->indexConfiguration->indexCatalog);
-            $this->diabledProductList($this->productProccess, $this->indexConfiguration->indexCatalog);
+            $this->diabledProductList($this->productProccessId, $this->indexConfiguration->indexCatalog);
 
             Event::dispatch(
                 new IndexationProccess(
@@ -531,7 +536,8 @@ class Import
     {
         $attributesSearch = $this->coreSearch->getSearchAttributesByIndex($index);
 
-        foreach ($productProccess as $productId) {
+        foreach ($productProccess as $item) {
+            $productId = $item["id"];
             $indexValues = [];
 
             foreach ($attributesSearch as $attributeSearchable) {
@@ -647,6 +653,7 @@ class Import
                 $newIndexProducts->id_index_catalog = $idIndex;
                 $newIndexProducts->value = $value;
                 $newIndexProducts->status = 1;
+                $newIndexProducts->index_priority = 0;
                 $newIndexProducts->created_at = date("Y-m-d H:i:s");
                 $newIndexProducts->updated_at = null;
                 $newIndexProducts->save();
@@ -1154,7 +1161,8 @@ class Import
                 );
 
                 if ($updateProduct != null) {
-                    $this->productProccess[] = $updateProduct->id;
+                    $this->productProccessId[] = $updateProduct->id;
+                    $this->productProccess[] = ["id" => $updateProduct->id, "priority" => $product["value_suscription"] ?? 0];
                     $this->setProductMedia($updateProduct->id, $idIndex, $product["image"]);
 
                     if (isset($product["attributes"]) && is_array($product["attributes"])) {
@@ -1169,7 +1177,8 @@ class Import
                 );
 
                 if ($newProduct != null) {
-                    $this->productProccess[] = $newProduct->id;
+                    $this->productProccessId[] = $newProduct->id;
+                    $this->productProccess[] = ["id" => $newProduct->id, "priority" => $product["value_suscription"] ?? 0];
                     $this->setProductMedia($newProduct->id, $idIndex, $product["image"]);
                     $this->createProductIndex($newProduct, $idIndex);
 
