@@ -7,8 +7,10 @@ use Eduard\Search\Events\SearchProccess;
 use Eduard\Search\Events\IndexationProccess;
 use Eduard\Search\Listeners\AfterSearchProccess;
 use Eduard\Search\Listeners\AfterIndexationProccess;
-use Eduard\Search\Models\Product;
-use Eduard\Search\Observers\ProductObserver;
+use Eduard\Search\Console\Commands\DisabledIndexProducts;
+use Eduard\Search\Console\Commands\JobIndexationProccess;
+use Eduard\Search\Console\Commands\JobSearchProccess;
+use Eduard\Search\Console\Commands\JobSendMailIndex;
 
 class SearchServiceProvider extends ServiceProvider
 {
@@ -24,6 +26,13 @@ class SearchServiceProvider extends ServiceProvider
         IndexationProccess::class => [
             AfterIndexationProccess::class,
         ],
+    ];
+
+    protected $commands = [
+        DisabledIndexProducts::class,
+        JobIndexationProccess::class,
+        JobSearchProccess::class,
+        JobSendMailIndex::class,
     ];
 
     /**
@@ -43,8 +52,6 @@ class SearchServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Product::observe(ProductObserver::class);
-
         // Registrar eventos y sus listeners
         $this->registerEvents();
 
@@ -53,6 +60,10 @@ class SearchServiceProvider extends ServiceProvider
 
         // Publicar configuraciones del paquete
         $this->publishConfigurations();
+
+        if ($this->app->runningInConsole()) {
+            $this->commands($this->commands);
+        }
 
         // Cargar rutas específicas del módulo
         $this->loadRoutes();
