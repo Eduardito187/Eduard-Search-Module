@@ -11,6 +11,7 @@ use Eduard\Search\Console\Commands\DisabledIndexProducts;
 use Eduard\Search\Console\Commands\JobIndexationProccess;
 use Eduard\Search\Console\Commands\JobSearchProccess;
 use Eduard\Search\Console\Commands\JobSendMailIndex;
+use Eduard\Search\Console\Commands\DeleteBackupQuery;
 
 class SearchServiceProvider extends ServiceProvider
 {
@@ -33,6 +34,7 @@ class SearchServiceProvider extends ServiceProvider
         JobIndexationProccess::class,
         JobSearchProccess::class,
         JobSendMailIndex::class,
+        DeleteBackupQuery::class
     ];
 
     /**
