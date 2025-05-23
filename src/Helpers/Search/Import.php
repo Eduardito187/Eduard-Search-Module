@@ -2,30 +2,30 @@
 
 namespace Eduard\Search\Helpers\Search;
 
-use Exception;
-use Illuminate\Support\Str;
-use Eduard\Search\Models\Media;
-use Eduard\Search\Models\Product;
+use Eduard\Search\Events\IndexationProccess;
 use Eduard\Search\Models\Attributes;
-use Eduard\Search\Models\AccessIndex;
-use Eduard\Search\Models\SortingType;
-use Illuminate\Support\Facades\Event;
-use Eduard\Search\Models\IndexCatalog;
-use Eduard\Search\Models\ProductIndex;
-use Eduard\Search\Models\ProductMedia;
-use Eduard\Search\Models\TypeAttribute;
-use Eduard\Search\Models\IndexProducts;
-use Eduard\Search\Models\RankingSorting;
 use Eduard\Search\Models\AttributeSearch;
-use Eduard\Search\Models\ProductAttribute;
-use Eduard\Search\Models\FiltersAttributes;
-use Eduard\Account\Helpers\System\CoreHttp;
+use Eduard\Search\Models\IndexCatalog;
+use Exception;
 use Eduard\Search\Models\IndexConfiguration;
+use Eduard\Search\Models\Product;
+use Eduard\Search\Models\ProductAttribute;
+use Eduard\Search\Models\ProductIndex;
+use Eduard\Account\Helpers\System\CoreHttp;
+use Eduard\Search\Models\AccessIndex;
+use Eduard\Search\Models\AttributesRulesExclude;
 use Eduard\Account\Models\AutorizationToken;
 use Eduard\Search\Models\ConditionsExcludes;
-use Eduard\Search\Events\IndexationProccess;
-use Eduard\Search\Models\AttributesRulesExclude;
+use Eduard\Search\Models\FiltersAttributes;
+use Eduard\Search\Models\Media;
+use Eduard\Search\Models\ProductMedia;
+use Eduard\Search\Models\RankingSorting;
+use Eduard\Search\Models\SortingType;
+use Eduard\Search\Models\TypeAttribute;
+use Illuminate\Support\Str;
 use Eduard\Search\Helpers\Search\Core as CoreSearch;
+use Eduard\Search\Models\IndexProducts;
+use Illuminate\Support\Facades\Event;
 
 class Import
 {
@@ -150,7 +150,6 @@ class Import
             $newProductIndex->status = true;
             $newProductIndex->updated_at = date("Y-m-d H:i:s");
             $newProductIndex->save();
-            $this->incrementIndexProductCount();
         }
     }
 
@@ -532,7 +531,7 @@ class Import
     {
         $attributesSearch = $this->coreSearch->getSearchAttributesByIndex($index);
 
-        foreach ($productProccess as $key => $productId) {
+        foreach ($productProccess as $productId) {
             $indexValues = [];
 
             foreach ($attributesSearch as $attributeSearchable) {
@@ -551,7 +550,7 @@ class Import
                 $this->coreSearch->getProductInfoBasic($productId),
             );
             $this->deleteIndexProduct($index->id, $productId);
-            $this->savedIndex($productId, $index->id, $indexValues, $key);
+            $this->savedIndex($productId, $index->id, $indexValues);
         }
     }
 
@@ -639,7 +638,7 @@ class Import
     /**
      * @inheritDoc
      */
-    public function savedIndex(int $idProduct, int $idIndex, array $listValue = [], int $key = 0)
+    public function savedIndex(int $idProduct, int $idIndex, array $listValue = [])
     {
         foreach ($listValue as $value) {
             try {
@@ -648,7 +647,6 @@ class Import
                 $newIndexProducts->id_index_catalog = $idIndex;
                 $newIndexProducts->value = $value;
                 $newIndexProducts->status = 1;
-                $newIndexProducts->index_priority = $key;
                 $newIndexProducts->created_at = date("Y-m-d H:i:s");
                 $newIndexProducts->updated_at = null;
                 $newIndexProducts->save();
@@ -1147,8 +1145,6 @@ class Import
             (isset($product["name"]) && isset($product["sku"]) && isset($product["image"])) &&
             (is_string($product["name"]) && is_string($product["sku"]) && is_string($product["image"]))
         ) {
-            $priorityOrder = $product["value_suscription"] ?? 0;
-
             if ($this->existProduct($product["sku"], $currentClient->id)) {
                 $updateProduct = $this->updateProduct(
                     $product["name"],
@@ -1158,9 +1154,8 @@ class Import
                 );
 
                 if ($updateProduct != null) {
-                    $this->productProccess[$priorityOrder] = $updateProduct->id;
+                    $this->productProccess[] = $updateProduct->id;
                     $this->setProductMedia($updateProduct->id, $idIndex, $product["image"]);
-                    $this->createProductIndex($updateProduct, $idIndex);
 
                     if (isset($product["attributes"]) && is_array($product["attributes"])) {
                         $this->updateAttributes($product["attributes"], $updateProduct, $idIndex);
@@ -1174,13 +1169,15 @@ class Import
                 );
 
                 if ($newProduct != null) {
-                    $this->productProccess[$priorityOrder] = $newProduct->id;
+                    $this->productProccess[] = $newProduct->id;
                     $this->setProductMedia($newProduct->id, $idIndex, $product["image"]);
                     $this->createProductIndex($newProduct, $idIndex);
 
                     if (isset($product["attributes"]) && is_array($product["attributes"])) {
                         $this->updateAttributes($product["attributes"], $newProduct, $idIndex);
                     }
+
+                    $this->incrementIndexProductCount();
                 }
             }
         }
@@ -1191,10 +1188,10 @@ class Import
      */
     public function setProductMedia($idProduct, $idIndex, $url)
     {
+        $this->deleteProductMedia($idProduct, $idIndex);
         $idMedia = $this->createMedia($url);
 
         if ($idMedia != null) {
-            $this->deleteProductMedia($idProduct, $idIndex);
             $this->registerProductMedia($idProduct, $idIndex, $idMedia);
         }
     }
@@ -1204,7 +1201,12 @@ class Import
      */
     public function deleteProductMedia($idProduct, $idIndex)
     {
-        return ProductMedia::where('id_product', $idProduct)->where('id_index', $idIndex)->first();
+        $mediaIds = ProductMedia::where('id_product', $idProduct)->where('id_index', $idIndex)->pluck('id_media')->toArray();
+
+        if (!empty($mediaIds)) {
+            Media::whereIn('id', $mediaIds)->delete();
+            ProductMedia::where('id_product', $idProduct)->where('id_index', $idIndex)->delete();
+        }
     }
 
     /**
