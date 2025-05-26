@@ -30,7 +30,7 @@ class DisabledIndexProducts extends Command
      */
     public function handle()
     {
-        $threshold = Carbon::now()->subHours(72);
+        $threshold = Carbon::now()->subHours(env('DISABLE_PRODUCT_UPDATE_AFTER') ?? 48);
         DB::table('index_products as ip')->join('product as p', 'ip.id_product', '=', 'p.id')->whereNotNull('p.updated_at')->where('p.updated_at', '<', $threshold)->update(['ip.status' => 0]);
         DB::table('product')->whereNotNull('updated_at')->where('updated_at', '<', $threshold)->update(['status' => 0]);
         Log::channel('disabledIndexProducts')->info("Cron disabledIndexProducts ejecutado.");
