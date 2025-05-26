@@ -627,8 +627,8 @@ class Import
                     ->pluck('product_attribute.id_product')->toArray();
             }
 
-            ProductIndex::where('status', true)->whereIn('id_product', $idProductsDisabled)->update(['status' => false]);
-            IndexProducts::where('status', true)->whereIn('id_product', $idProductsDisabled)->update(['status' => false]);
+            ProductIndex::where('status', true)->where('id_index', $index->id)->whereIn('id_product', $idProductsDisabled)->update(['status' => false]);
+            IndexProducts::where('status', true)->where('id_index_catalog', $index->id)->whereIn('id_product', $idProductsDisabled)->update(['status' => false]);
         }
     }
 
