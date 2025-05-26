@@ -845,20 +845,24 @@ class Core
         $productos = ProductVectors::with('product')->get();
 
         foreach ($productos as $registro) {
-            $coincide = false;
+            //$coincide = false;
 
             foreach ($tokensBusqueda as $tokenBuscado) {
                 foreach (array_keys($registro->vector) as $tokenVector) {
                     if (stripos($tokenVector, $tokenBuscado) !== false) {
-                        $coincide = true;
+                        $resultados[] = $tokenVector;
+                        //$coincide = true;
                         break 2;
                     }
                 }
             }
 
+            /*
+            #retornado de productos
             if ($coincide && isset($registro->product)) {
                 $resultados[] = $registro->product->name;
             }
+            */
 
             if (count($resultados) >= $limite) break;
         }
