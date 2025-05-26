@@ -26,6 +26,7 @@ use Illuminate\Support\Str;
 use Eduard\Search\Helpers\Search\Core as CoreSearch;
 use Eduard\Search\Models\IndexProducts;
 use Illuminate\Support\Facades\Event;
+use Eduard\Account\Helpers\Text\Translate;
 
 class Import
 {
@@ -54,9 +55,19 @@ class Import
      */
     protected $coreSearch;
 
-    public function __construct(CoreHttp $coreHttp, CoreSearch $coreSearch) {
+    /**
+     * @var Translate
+     */
+    protected $translate;
+
+    public function __construct(
+        CoreHttp $coreHttp,
+        CoreSearch $coreSearch,
+        Translate $translate
+    ) {
         $this->coreHttp = $coreHttp;
         $this->coreSearch = $coreSearch;
+        $this->translate = $translate;
     }
 
     /**
@@ -450,23 +461,17 @@ class Import
     public function processIndexCatalog($params, $headers)
     {
         try {
-            $this->coreHttp->validateApiKey($headers);
-    
-            if (!is_array($params) || !array_key_exists("sku", $params) || !array_key_exists("name", $params) || !array_key_exists("attributes", $params)) {
+            if (!is_array($params) || !array_key_exists("index", $params)) {
                 throw new Exception("Formato incorrecto de consulta.");
             }
     
-            if (!is_string($params["sku"])) {
-                throw new Exception("El parametro que se esta pasando es incorrecto");
-            }
+            $authorizationToken = $this->getAuthorizationClient($headers[$this->translate->getAuthorization()]);
     
-            $this->indexConfiguration = $this->getCatalogConfigIndexByKey($headers["api-key"][0]);
-    
-            if (!$this->indexConfiguration) {
+            if (!$authorizationToken) {
                 throw new Exception("El api-key no esta asignado a un indice valido.");
             }
 
-            $client = $this->indexConfiguration->indexCatalog->client;
+            $client = $authorizationToken->client;
 
             if (array_key_exists("index", $params) ) {
                 if (!is_array($params["index"])) {
@@ -639,7 +644,7 @@ class Import
     {
         foreach ($listValue as $value) {
             try {
-                $indexProduct = IndexProducts::where('id_index_catalog', $idIndex)->where('id_product', $idProduct)->first();
+                $indexProduct = IndexProducts::where('id_index_catalog', $idIndex)->where('id_product', $idProduct)->where('value', $value)->first();
     
                 if (!$indexProduct) {
                     $indexProduct = new IndexProducts();
