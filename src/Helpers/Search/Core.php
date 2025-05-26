@@ -894,6 +894,7 @@ class Core
     private function tokenizar(string $texto): array
     {
         $limpio = strtolower(preg_replace('/[^a-z0-9áéíóúñ ]/i', '', $texto));
+
         return array_filter(explode(' ', $limpio));
     }
 
@@ -902,12 +903,14 @@ class Core
      */
     private function calcularTF(array $tokens): array
     {
-        $frecuencia = array_count_values($tokens);
+        $frecuence = array_count_values($tokens);
         $total = count($tokens);
-        foreach ($frecuencia as &$valor) {
+
+        foreach ($frecuence as &$valor) {
             $valor = $valor / $total;
         }
-        return $frecuencia;
+
+        return $frecuence;
     }
 
     /**
@@ -916,9 +919,21 @@ class Core
     private function vectorizar(array $tf, array $idf): array
     {
         $vector = [];
-        foreach ($idf as $palabra => $idfVal) {
-            $vector[$palabra] = ($tf[$palabra] ?? 0) * $idfVal;
+
+        foreach ($idf as $key => $idfVal) {
+            if (strlen($key) > 3 && $this->validVector($key)) {
+                $vector[$key] = ($tf[$key] ?? 0) * $idfVal;
+            }
         }
+
         return $vector;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    private function validVector($key)
+    {
+        return ctype_alpha($key) || ctype_digit($key);
     }
 }
