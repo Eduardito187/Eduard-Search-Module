@@ -605,7 +605,7 @@ class Core
      */
     public function getProductsById(array $ids)
     {
-        return Product::whereIn("id", $ids)->get();
+        return Product::whereIn("id", $ids)->orderByRaw('FIELD(id, ' . implode(',', $ids) . ')')->get();
     }
 
     /**
