@@ -3,25 +3,25 @@
 namespace Eduard\Search\Helpers\Search;
 
 use Exception;
-use Eduard\Search\Events\SearchProccess;
-use Eduard\Search\Models\Attributes;
-use Eduard\Search\Models\AttributeSearch;
-use Eduard\Search\Models\IndexConfiguration;
-use Eduard\Search\Models\IndexCatalog;
 use Eduard\Search\Models\Product;
-use Eduard\Search\Models\ProductAttribute;
-use Eduard\Search\Models\RankingSorting;
-use Eduard\Account\Helpers\System\CoreHttp;
-use Eduard\Search\Models\AttributeFilterType;
-use Eduard\Search\Models\BackupQuery;
-use Eduard\Search\Models\FiltersAttributes;
-use Eduard\Search\Models\HistoryCustomer;
-use Eduard\Search\Models\IndexProducts;
-use Eduard\Search\Models\ProductIndex;
-use Eduard\Search\Models\ProductVectors;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\DB;
+use Eduard\Search\Models\Attributes;
+use Eduard\Search\Models\BackupQuery;
+use Illuminate\Support\Facades\Event;
+use Eduard\Search\Models\IndexCatalog;
+use Eduard\Search\Models\ProductIndex;
+use Eduard\Search\Models\IndexProducts;
+use Illuminate\Support\Facades\Session;
+use Eduard\Search\Models\ProductVectors;
+use Eduard\Search\Events\SearchProccess;
+use Eduard\Search\Models\RankingSorting;
+use Eduard\Search\Models\AttributeSearch;
+use Eduard\Search\Models\HistoryCustomer;
+use Eduard\Search\Models\ProductAttribute;
+use Eduard\Account\Helpers\System\CoreHttp;
+use Eduard\Search\Models\FiltersAttributes;
+use Eduard\Search\Models\IndexConfiguration;
+use Eduard\Search\Models\AttributeFilterType;
 
 class Core
 {
@@ -275,7 +275,7 @@ class Core
      */
     public function searchInIndexProducts($index, $query)
     {
-        return IndexProducts::where('id_index_catalog', $index)->where('value', 'like', '%' . $query . '%')->where('status', 1)
+        return IndexProducts::where('id_index_catalog', $index)->where('value', 'like', '%' . $query . '%')->where('status', 1)->orderBy('index_priority', 'desc')
         ->pluck('id_product')->unique()->values()->toArray();
     }
 
@@ -284,7 +284,7 @@ class Core
      */
     public function searchInIndexProductsTake($index, $query, $take = 1)
     {
-        return IndexProducts::where('id_index_catalog', $index)->where('value', 'like', '%' . $query . '%')->where('status', 1)
+        return IndexProducts::where('id_index_catalog', $index)->where('value', 'like', '%' . $query . '%')->where('status', 1)->orderBy('index_priority', 'desc')
         ->pluck('id_product')->unique()->values()->take($take)->toArray();
     }
 
