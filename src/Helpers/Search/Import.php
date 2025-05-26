@@ -465,13 +465,14 @@ class Import
                 throw new Exception("Formato incorrecto de consulta.");
             }
     
-            $authorizationToken = $this->getAuthorizationClient($headers[$this->translate->getAuthorization()]);
+            $token = $this->coreHttp->getTokenRequest($headers);
+            $clientToken = $this->coreHttp->getClientToken($token);
     
-            if (!$authorizationToken) {
+            if (!$clientToken) {
                 throw new Exception("El api-key no esta asignado a un indice valido.");
             }
 
-            $client = $authorizationToken->client;
+            $client = $clientToken->client;
 
             if (array_key_exists("index", $params) ) {
                 if (!is_array($params["index"])) {
