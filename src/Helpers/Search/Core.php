@@ -850,7 +850,9 @@ class Core
             foreach ($tokensBusqueda as $tokenBuscado) {
                 foreach (array_keys($registro->vector) as $tokenVector) {
                     if (stripos($tokenVector, $tokenBuscado) !== false) {
-                        $resultados[] = $tokenVector;
+                        if (!in_array($tokenVector, $resultados)) {
+                            $resultados[] = $tokenVector;
+                        }
                         //$coincide = true;
                         break 2;
                     }
