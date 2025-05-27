@@ -105,14 +105,6 @@ class Import
     /**
      * @inheritDoc
      */
-    public function verifyProductInIndex($idIndex, $idProduct)
-    {
-        return ProductIndex::where('id_index', $idIndex)->where('id_product', $idProduct)->exists();
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function deleteValueProductAttribute($idIndex, $idProduct, $idAttribute)
     {
         return ProductAttribute::where('id_index', $idIndex)->where('id_product', $idProduct)->where('id_attribute', $idAttribute)->delete();
@@ -167,13 +159,19 @@ class Import
      */
     public function createProductIndex($newProduct, $idIndex)
     {
-        if (!$this->verifyProductInIndex($idIndex, $newProduct->id)) {
-            $newProductIndex = new ProductIndex();
-            $newProductIndex->id_product = $newProduct->id;
-            $newProductIndex->id_index = $idIndex;
-            $newProductIndex->status = true;
-            $newProductIndex->updated_at = date("Y-m-d H:i:s");
-            $newProductIndex->save();
+        $productIndex = ProductIndex::where('id_product', $newProduct->id)->where('id_index', $idIndex)->first();
+
+        if ($productIndex) {
+            $productIndex->status = true;
+            $productIndex->updated_at = now();
+            $productIndex->save();
+        } else {
+            ProductIndex::create([
+                'id_product' => $newProduct->id,
+                'id_index' => $idIndex,
+                'status' => true,
+                'updated_at' => now()
+            ]);
         }
     }
 
@@ -1169,41 +1167,32 @@ class Import
             (isset($product["name"]) && isset($product["sku"]) && isset($product["image"])) &&
             (is_string($product["name"]) && is_string($product["sku"]) && is_string($product["image"]))
         ) {
+            $productEntity = null;
+
             if ($this->existProduct($product["sku"], $currentClient->id)) {
-                $updateProduct = $this->updateProduct(
+                $productEntity = $this->updateProduct(
                     $product["name"],
                     $product["sku"],
                     $currentClient->id,
                     $idIndex
                 );
-
-                if ($updateProduct != null) {
-                    $this->productProccessId[] = $updateProduct->id;
-                    $this->productProccess[] = ["id" => $updateProduct->id, "priority" => $product["value_suscription"] ?? 0];
-                    $this->setProductMedia($updateProduct->id, $idIndex, $product["image"]);
-
-                    if (isset($product["attributes"]) && is_array($product["attributes"])) {
-                        $this->updateAttributes($product["attributes"], $updateProduct, $idIndex);
-                    }
-                }
             } else {
-                $newProduct = $this->onlyCreateProduct(
+                $productEntity = $this->onlyCreateProduct(
                     $product["name"],
                     $product["sku"],
                     $currentClient->id
                 );
+                $this->incrementIndexProductCount();
+            }
 
-                if ($newProduct != null) {
-                    $this->productProccessId[] = $newProduct->id;
-                    $this->productProccess[] = ["id" => $newProduct->id, "priority" => $product["value_suscription"] ?? 0];
-                    $this->setProductMedia($newProduct->id, $idIndex, $product["image"]);
-                    $this->createProductIndex($newProduct, $idIndex);
+            if ($productEntity != null) {
+                $this->productProccessId[] = $productEntity->id;
+                $this->productProccess[] = ["id" => $productEntity->id, "priority" => $product["value_suscription"] ?? 0];
+                $this->setProductMedia($productEntity->id, $idIndex, $product["image"]);
+                $this->createProductIndex($productEntity, $idIndex);
 
-                    if (isset($product["attributes"]) && is_array($product["attributes"])) {
-                        $this->updateAttributes($product["attributes"], $newProduct, $idIndex);
-                    }
-
-                    $this->incrementIndexProductCount();
+                if (isset($product["attributes"]) && is_array($product["attributes"])) {
+                    $this->updateAttributes($product["attributes"], $productEntity, $idIndex);
                 }
             }
         }
