@@ -162,15 +162,18 @@ class Import
         $productIndex = ProductIndex::where('id_product', $newProduct->id)->where('id_index', $idIndex)->first();
 
         if ($productIndex) {
-            $productIndex->status = true;
-            $productIndex->updated_at = now();
-            $productIndex->save();
+            ProductIndex::where('id_product', $newProduct->id)
+                ->where('id_index', $idIndex)
+                ->update([
+                    'status' => true,
+                    'updated_at' => now(),
+                ]);
         } else {
             ProductIndex::create([
                 'id_product' => $newProduct->id,
                 'id_index' => $idIndex,
                 'status' => true,
-                'updated_at' => now()
+                'updated_at' => now(),
             ]);
         }
     }
