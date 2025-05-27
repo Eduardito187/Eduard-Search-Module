@@ -670,7 +670,7 @@ class Import
                 $indexProduct->index_priority = $priority;
                 $indexProduct->save();
             } catch (Exception $e) {
-                $this->logger->info("ERROR::savedIndex ".$e->getMessage());
+                Log::info("ERROR::savedIndex ".$e->getMessage());
                 return null;
             }
         }
@@ -692,7 +692,7 @@ class Import
             $newProduct->save();
             return $newProduct;
         } catch (Exception $e) {
-            $this->logger->info("ERROR::onlyCreateProduct ".$e->getMessage());
+            Log::info("ERROR::onlyCreateProduct ".$e->getMessage());
             return null;
         }
     }
@@ -986,7 +986,7 @@ class Import
             $this->createAccessIndex($client->autorizationToken->id, $newIndexCatalog->id, $client->id);
             return $newIndexCatalog->id;
         } catch (Exception $e) {
-            $this->logger->info("ERROR::createIndexCatalog ".$e->getMessage());
+            Log::info("ERROR::createIndexCatalog ".$e->getMessage());
             return null;
         }
     }
@@ -1034,7 +1034,7 @@ class Import
             $AccessIndex->save();
             return $AccessIndex;
         } catch (Exception $e) {
-            $this->logger->info("ERROR::createAccessIndex ".$e->getMessage());
+            Log::info("ERROR::createAccessIndex ".$e->getMessage());
             return null;
         }
     }
@@ -1057,7 +1057,7 @@ class Import
             $newIndexCatalog->save();
             return $newIndexCatalog->id;
         } catch (Exception $e) {
-            $this->logger->info("ERROR::createIndexCatalogConfig ".$e->getMessage());
+            Log::info("ERROR::createIndexCatalogConfig ".$e->getMessage());
             return null;
         }
     }
@@ -1124,7 +1124,7 @@ class Import
             $newAttributes->save();
             return $newAttributes->id;
         } catch (Exception $e) {
-            $this->logger->info("ERROR::createAttribute ".$e->getMessage());
+            Log::info("ERROR::createAttribute ".$e->getMessage());
             return null;
         }
     }
@@ -1270,7 +1270,7 @@ class Import
                 return $media->id;
             }
         } catch (Exception $e) {
-            $this->logger->info("ERROR::createMedia ".$e->getMessage());
+            Log::info("ERROR::createMedia ".$e->getMessage());
             return null;
         }
     }
@@ -1502,7 +1502,7 @@ class Import
             $newItem->save();
             return $newItem->id;
         } catch (Exception $e) {
-            $this->logger->info("ERROR::createRulesExclude ".$e->getMessage());
+            Log::info("ERROR::createRulesExclude ".$e->getMessage());
             return null;
         }
     }
@@ -1520,7 +1520,7 @@ class Import
             $newItem->save();
             return $newItem->id;
         } catch (Exception $e) {
-            $this->logger->info("ERROR::createAttributeSearch ".$e->getMessage());
+            Log::info("ERROR::createAttributeSearch ".$e->getMessage());
             return null;
         }
     }
@@ -1539,7 +1539,7 @@ class Import
             $newItem->save();
             return $newItem->id;
         } catch (Exception $e) {
-            $this->logger->info("ERROR::createAttributeSorting ".$e->getMessage());
+            Log::info("ERROR::createAttributeSorting ".$e->getMessage());
             return null;
         }
     }
@@ -1601,7 +1601,7 @@ class Import
             $newItem->save();
             return $newItem->id;
         } catch (Exception $e) {
-            $this->logger->info("ERROR::createFilterAttribute ".$e->getMessage());
+            Log::info("ERROR::createFilterAttribute ".$e->getMessage());
             return null;
         }
     }
