@@ -1394,26 +1394,30 @@ class Import
                 (isset($attribute["code"]) && isset($attribute["sort"])) &&
                 (is_string($attribute["code"]) && is_string($attribute["sort"]))
             ) {
-                $attributeItem = $this->getAttributeByCliente($attribute["code"], $currentClient->id);
-
-                if ($attributeItem != null) {
-
-                    foreach ($currentClient->indexes as $key => $index) {
-                        $sttributeSearch = $this->getAttributeSearchByIndex($attributeItem->id, $index->id);
-
-                        if ($sttributeSearch == null) {
-                            $this->createAttributeSearch(
-                                $attributeItem->id,
-                                $index->id,
-                                $attribute["sort"]
-                            );
-                        } else {
-                            $sttributeSearch->order = $attribute["sort"];
-                            $sttributeSearch->save();
+                try {
+                    $attributeItem = $this->getAttributeByCliente($attribute["code"], $currentClient->id);
+    
+                    if ($attributeItem != null) {
+    
+                        foreach ($currentClient->indexes as $key => $index) {
+                            $sttributeSearch = $this->getAttributeSearchByIndex($attributeItem->id, $index->id);
+    
+                            if ($sttributeSearch == null) {
+                                $this->createAttributeSearch(
+                                    $attributeItem->id,
+                                    $index->id,
+                                    $attribute["sort"]
+                                );
+                            } else {
+                                $sttributeSearch->order = $attribute["sort"];
+                                $sttributeSearch->save();
+                            }
                         }
+    
+                        $attributesProccess[] = $attributeItem->id;
                     }
-
-                    $attributesProccess[] = $attributeItem->id;
+                } catch (Exception $e) {
+                    Log::info("ERROR::importAttributesSearch ".$e->getMessage());
                 }
             }
         }
@@ -1560,20 +1564,24 @@ class Import
                 (isset($attribute["code"]) && isset($attribute["sort"])) &&
                 (is_string($attribute["code"]))
             ) {
-                $attribute = $this->getAttributeByCliente($attribute["code"], $currentClient->id);
-
-                if ($attribute != null) {
-
-                    $filterAttribute = $this->getAttributeFilter($currentClient->id, $attribute->id);
-
-                    if ($filterAttribute == null) {
-                        $this->createFilterAttribute($currentClient->id, $attribute->id, $attribute["sort"]);
-                    } else {
-                        $filterAttribute->status = true;
-                        $filterAttribute->save();
+                try {
+                    $attribute = $this->getAttributeByCliente($attribute["code"], $currentClient->id);
+    
+                    if ($attribute != null) {
+    
+                        $filterAttribute = $this->getAttributeFilter($currentClient->id, $attribute->id);
+    
+                        if ($filterAttribute == null) {
+                            $this->createFilterAttribute($currentClient->id, $attribute->id, $attribute["sort"]);
+                        } else {
+                            $filterAttribute->status = true;
+                            $filterAttribute->save();
+                        }
+    
+                        $attributesProccess[] = $attribute->id;
                     }
-
-                    $attributesProccess[] = $attribute->id;
+                } catch (Exception $e) {
+                    Log::info("ERROR::importAttributesFilters ".$e->getMessage());
                 }
             }
         }
@@ -1630,35 +1638,39 @@ class Import
                 (isset($attribute["name"]) && isset($attribute["code"]) && isset($attribute["label"]) && array_key_exists("type", $attribute)) &&
                 (is_string($attribute["name"]) && is_string($attribute["code"]) && is_string($attribute["label"]))
             ) {
-                if ($attribute["type"] == "" || $attribute["type"] == null || empty($attribute["type"])) {
-                    $attribute["type"] = "string";
-                }
-
-                $type = $this->getTypeAttribute($attribute["type"]);
-                $idAttribute = null;
-
-                if ($type != null) {
-                    if ($this->existAttribute($attribute["code"], $currentClient->id)) {
-                        $idAttribute = $this->updateAttribute(
-                            $attribute["name"],
-                            $attribute["code"],
-                            $attribute["label"],
-                            $type->id,
-                            $currentClient->id
-                        );
-                    } else {
-                        $idAttribute = $this->createAttribute(
-                            $attribute["name"],
-                            $attribute["code"],
-                            $attribute["label"],
-                            $type->id,
-                            $currentClient->id
-                        );
+                try {
+                    if ($attribute["type"] == "" || $attribute["type"] == null || empty($attribute["type"])) {
+                        $attribute["type"] = "string";
                     }
-                }
-
-                if ($idAttribute != null) {
-                    $attributesProccess[] = $idAttribute;
+    
+                    $type = $this->getTypeAttribute($attribute["type"]);
+                    $idAttribute = null;
+    
+                    if ($type != null) {
+                        if ($this->existAttribute($attribute["code"], $currentClient->id)) {
+                            $idAttribute = $this->updateAttribute(
+                                $attribute["name"],
+                                $attribute["code"],
+                                $attribute["label"],
+                                $type->id,
+                                $currentClient->id
+                            );
+                        } else {
+                            $idAttribute = $this->createAttribute(
+                                $attribute["name"],
+                                $attribute["code"],
+                                $attribute["label"],
+                                $type->id,
+                                $currentClient->id
+                            );
+                        }
+                    }
+    
+                    if ($idAttribute != null) {
+                        $attributesProccess[] = $idAttribute;
+                    }
+                } catch (Exception $e) {
+                    Log::info("ERROR::importAttributes ".$e->getMessage());
                 }
             }
         }
@@ -1684,20 +1696,24 @@ class Import
                 (isset($index["code"]) && isset($index["name"])) &&
                 (is_string($index["code"]) && is_string($index["name"]))
             ) {
-                if ($this->existIndex($index["code"], $currentClient->id)) {
-                    $this->updateIndexCatalog(
-                        $index["code"],
-                        $index["name"],
-                        $index["status"] ?? false,
-                        $currentClient
-                    );
-                } else {
-                    $this->createIndexCatalog(
-                        $index["code"],
-                        $index["name"],
-                        $index["status"] ?? false,
-                        $currentClient
-                    );
+                try {
+                    if ($this->existIndex($index["code"], $currentClient->id)) {
+                        $this->updateIndexCatalog(
+                            $index["code"],
+                            $index["name"],
+                            $index["status"] ?? false,
+                            $currentClient
+                        );
+                    } else {
+                        $this->createIndexCatalog(
+                            $index["code"],
+                            $index["name"],
+                            $index["status"] ?? false,
+                            $currentClient
+                        );
+                    }
+                } catch (Exception $e) {
+                    Log::info("ERROR::importIndexCatalog ".$e->getMessage());
                 }
             }
         }
