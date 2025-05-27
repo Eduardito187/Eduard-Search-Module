@@ -142,7 +142,7 @@ class Import
         foreach ($attributes as $attributeArray) {
             $attribute = $this->getAttributeByCode($attributeArray["code"]);
 
-            if ($attribute) {
+            if ($attribute && $attributeArray["value"] != "" && $attributeArray["value"] != null) {
                 $this->deleteValueProductAttribute($idIndex, $product->id, $attribute->id);
                 $productAttribute = new ProductAttribute();
                 $productAttribute->id_index = $idIndex;
@@ -653,25 +653,29 @@ class Import
     public function savedIndex(int $idProduct, int $idIndex, array $listValue = [], $priority = 0)
     {
         foreach ($listValue as $value) {
-            try {
-                $indexProduct = IndexProducts::where('id_index_catalog', $idIndex)->where('id_product', $idProduct)->where('value', $value)->first();
+            if ($value != "" && $value != null) {
+                try {
+                    $indexProduct = IndexProducts::where('id_index_catalog', $idIndex)->where('id_product', $idProduct)->where('value', $value)->first();
+        
+                    if (!$indexProduct) {
+                        $indexProduct = new IndexProducts();
+                        $indexProduct->created_at = now();
+                    } else {
+                        $indexProduct->updated_at = now();
+                    }
     
-                if (!$indexProduct) {
-                    $indexProduct = new IndexProducts();
-                    $indexProduct->created_at = now();
-                } else {
-                    $indexProduct->updated_at = now();
+                    $indexProduct->id_product = $idProduct;
+                    $indexProduct->id_index_catalog = $idIndex;
+                    $indexProduct->value = $value;
+                    $indexProduct->status = 1;
+                    $indexProduct->index_priority = $priority;
+                    $indexProduct->save();
+                } catch (Exception $e) {
+                    Log::info("ERROR::savedIndex ".$e->getMessage());
+                    return null;
                 }
-
-                $indexProduct->id_product = $idProduct;
-                $indexProduct->id_index_catalog = $idIndex;
-                $indexProduct->value = $value;
-                $indexProduct->status = 1;
-                $indexProduct->index_priority = $priority;
-                $indexProduct->save();
-            } catch (Exception $e) {
-                Log::info("ERROR::savedIndex ".$e->getMessage());
-                return null;
+            } else {
+                Log::info("ERROR::savedIndex value invalid product ".$idProduct.", index ".$idIndex.", value ".$value);
             }
         }
     }
