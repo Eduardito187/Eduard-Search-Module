@@ -850,7 +850,7 @@ class Core
             foreach ($tokensBusqueda as $tokenBuscado) {
                 foreach (array_keys($registro->vector) as $tokenVector) {
                     if (stripos($tokenVector, $tokenBuscado) !== false) {
-                        if (!in_array($tokenVector, $resultados)) {
+                        if (!in_array($tokenVector, $resultados) && $tokenVector != $tokenBuscado) {
                             $resultados[] = $tokenVector;
                         }
                         //$coincide = true;
@@ -940,6 +940,13 @@ class Core
      */
     private function validVector($key)
     {
-        return ctype_alpha($key) || ctype_digit($key);
+        if ($key === '') {
+            return false;
+        }
+
+        $validateString = preg_match('/[a-zA-Z]/', $key);
+        $validateNumber = preg_match('/[0-9]/', $key);
+
+        return ($validateString xor $validateNumber);
     }
 }
