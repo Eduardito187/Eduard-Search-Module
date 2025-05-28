@@ -28,6 +28,7 @@ use Eduard\Search\Events\IndexationProccess;
 use Eduard\Search\Models\IndexConfiguration;
 use Eduard\Search\Models\AttributesRulesExclude;
 use Eduard\Search\Helpers\Search\Core as CoreSearch;
+use Eduard\Search\Models\IndexerProduct;
 
 class Import
 {
@@ -552,25 +553,29 @@ class Import
         $attributesSearch = $this->coreSearch->getSearchAttributesByIndex($index);
 
         foreach ($productProccess as $item) {
-            $productId = $item["id"];
-            $indexValues = [];
-
-            foreach ($attributesSearch as $attributeSearchable) {
+            try {
+                $productId = $item["id"];
+                $indexValues = [];
+    
+                foreach ($attributesSearch as $attributeSearchable) {
+                    $indexValues = array_merge(
+                        $indexValues,
+                        $this->coreSearch->getProductValueSearch(
+                            $attributeSearchable->id_attribute,
+                            $index->id,
+                            $productId
+                        )
+                    );
+                }
+    
                 $indexValues = array_merge(
                     $indexValues,
-                    $this->coreSearch->getProductValueSearch(
-                        $attributeSearchable->id_attribute,
-                        $index->id,
-                        $productId
-                    )
+                    $this->coreSearch->getProductInfoBasic($productId),
                 );
+                $this->savedIndex($productId, $index->id, $indexValues, $item["priority"]);
+            } catch (Exception $e) {
+                Log::info("ERROR::savedIndex ".$e->getMessage());
             }
-
-            $indexValues = array_merge(
-                $indexValues,
-                $this->coreSearch->getProductInfoBasic($productId),
-            );
-            $this->savedIndex($productId, $index->id, $indexValues, $item["priority"]);
         }
     }
 
@@ -672,11 +677,28 @@ class Import
                     $indexProduct->save();
                 } catch (Exception $e) {
                     Log::info("ERROR::savedIndex ".$e->getMessage());
-                    return null;
                 }
-            } else {
-                Log::info("ERROR::savedIndex value invalid product ".$idProduct.", index ".$idIndex.", value ".$value);
             }
+        }
+
+        if (count($listValue) > 0) {
+            $this->createIndexerProduct($idProduct, $idIndex);
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function createIndexerProduct($idProduct, $idIndex)
+    {
+        try {
+            $IndexerProduct = new IndexerProduct();
+            $IndexerProduct->id_product = $idProduct;
+            $IndexerProduct->id_index_catalog = $idIndex;
+            $IndexerProduct->created_at = now();
+            $IndexerProduct->save();
+        } catch (Exception $e) {
+            Log::info("ERROR::createIndexerProduct ".$e->getMessage());
         }
     }
 
