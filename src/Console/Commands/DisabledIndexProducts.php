@@ -32,7 +32,8 @@ class DisabledIndexProducts extends Command
     public function handle()
     {
         $threshold = Carbon::now()->subHours(env('DISABLE_PRODUCT_UPDATE_AFTER') ?? 48);
-        DB::table('index_products as ip')->join('product as p', 'ip.id_product', '=', 'p.id')->whereNotNull('p.updated_at')->where('p.updated_at', '<', $threshold)->update(['ip.status' => 0]);
+        DB::table('index_products as ip')->join('product as p', 'ip.id_product', '=', 'p.id')->whereNotNull('ip.updated_at')->where('ip.updated_at', '<', $threshold)->update(['ip.status' => 0]);
+        DB::table('index_products as ip')->join('product as p', 'ip.id_product', '=', 'p.id')->where('ip.updated_at', '>', $threshold)->update(['ip.status' => 1]);
         DB::table('product')->whereNotNull('updated_at')->where('updated_at', '<', $threshold)->update(['status' => 0]);
 
         $duplicates = IndexProducts::select('id_product', 'id_index_catalog', 'value', DB::raw('COUNT(*) as total'))->groupBy('id_product', 'id_index_catalog', 'value')->having('total', '>', 1)->get();
