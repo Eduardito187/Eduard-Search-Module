@@ -657,6 +657,8 @@ class Import
      */
     public function savedIndex(int $idProduct, int $idIndex, array $listValue = [], $priority = 0, $indexer = true)
     {
+        $idIndexProduct = [];
+
         foreach ($listValue as $value) {
             if ($value != "" && $value != null) {
                 try {
@@ -675,15 +677,29 @@ class Import
                     $indexProduct->status = 1;
                     $indexProduct->index_priority = $priority;
                     $indexProduct->save();
+                    $idIndexProduct[] = $indexProduct->id;
                 } catch (Exception $e) {
                     Log::info("ERROR::savedIndex ".$e->getMessage());
                 }
             }
         }
 
+        $this->deleteIndexInvalids($idIndex, $idProduct, $idIndexProduct);
+
         if (count($listValue) > 0 && $indexer) {
             $this->createIndexerProduct($idProduct, $idIndex);
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function deleteIndexInvalids($idIndex, $idProduct, $listId)
+    {
+        return IndexProducts::where('id_index_catalog', $idIndex)
+            ->where('id_product', $idProduct)->when(!empty($listId), function ($query) use ($listId) {
+                $query->whereNotIn('id', $listId);
+            })->delete();
     }
 
     /**
