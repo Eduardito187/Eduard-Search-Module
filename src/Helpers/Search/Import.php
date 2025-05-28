@@ -684,10 +684,9 @@ class Import
             }
         }
 
-        $this->deleteIndexInvalids($idIndex, $idProduct, $idIndexProduct);
-
         if (count($listValue) > 0 && $indexer) {
             $this->createIndexerProduct($idProduct, $idIndex);
+            $this->deleteIndexInvalids($idIndex, $idProduct, $idIndexProduct);
         }
     }
 
