@@ -1740,4 +1740,12 @@ class Import
             }
         }
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function indexProduct($idProduct, $idIndex)
+    {
+        return IndexProducts::where("id_product", $idProduct)->where("id_index_catalog", $idIndex)->get();
+    }
 }
