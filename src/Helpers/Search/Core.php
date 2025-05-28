@@ -899,9 +899,12 @@ class Core
      */
     private function tokenizar(string $texto): array
     {
-        $limpio = strtolower(preg_replace('/[^a-z0-9áéíóúñ ]/i', '', $texto));
+        $texto = mb_strtolower($texto);
+        $limpio = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $texto);
+        $limpio = preg_replace('/\s+/', ' ', $limpio);
+        $limpio = trim($limpio);
 
-        return array_filter(explode(' ', $limpio));
+        return explode(' ', $limpio);
     }
 
     /**
