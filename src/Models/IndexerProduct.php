@@ -12,7 +12,7 @@ class IndexerProduct extends Model
 {
     use HasFactory;
 
-    protected $table = 'index_products';
+    protected $table = 'indexer_product';
     protected $fillable = ['id_product', 'id_index_catalog'];
     protected $hidden = ['created_at'];
     protected $primaryKey = 'id';
