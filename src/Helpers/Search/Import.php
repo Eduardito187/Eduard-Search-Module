@@ -696,10 +696,13 @@ class Import
      */
     public function deleteIndexInvalids($idIndex, $idProduct, $listId)
     {
-        return IndexProducts::where('id_index_catalog', $idIndex)
-            ->where('id_product', $idProduct)->when(!empty($listId), function ($query) use ($listId) {
-                $query->whereNotIn('id', $listId);
-            })->delete();
+        $listIndex = IndexProducts::where('id_index_catalog', $idIndex)->where('id_product', $idProduct)->get();
+
+        foreach ($listIndex as $index) {
+            if (!in_array($index->id, $listId)) {
+                $index->delete();
+            }
+        }
     }
 
     /**
