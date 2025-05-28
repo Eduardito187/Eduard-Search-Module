@@ -685,8 +685,8 @@ class Import
         }
 
         if (count($listValue) > 0 && $indexer) {
-            $this->createIndexerProduct($idProduct, $idIndex);
             $this->deleteIndexInvalids($idIndex, $idProduct, $idIndexProduct);
+            $this->createIndexerProduct($idProduct, $idIndex);
         }
     }
 
@@ -698,7 +698,7 @@ class Import
         $listIndex = IndexProducts::where('id_index_catalog', $idIndex)->where('id_product', $idProduct)->get();
 
         foreach ($listIndex as $index) {
-            if (!in_array($index->id, $listId)) {
+            if (!in_array($index->id, $listId) && strpos($index->value, '⇔') == false) {
                 $index->delete();
             }
         }
