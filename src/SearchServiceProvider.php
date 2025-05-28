@@ -2,9 +2,11 @@
 
 namespace Eduard\Search;
 
+use Eduard\Search\Models\Product;
 use Illuminate\Support\ServiceProvider;
 use Eduard\Search\Events\SearchProccess;
 use Eduard\Search\Events\IndexationProccess;
+use Eduard\Search\Observers\ProductObserver;
 use Eduard\Search\Listeners\AfterSearchProccess;
 use Eduard\Search\Listeners\AfterIndexationProccess;
 use Eduard\Search\Console\Commands\DisabledIndexProducts;
@@ -54,6 +56,8 @@ class SearchServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        Product::observe(ProductObserver::class);
+
         // Registrar eventos y sus listeners
         $this->registerEvents();
 
