@@ -655,7 +655,7 @@ class Import
     /**
      * @inheritDoc
      */
-    public function savedIndex(int $idProduct, int $idIndex, array $listValue = [], $priority = 0)
+    public function savedIndex(int $idProduct, int $idIndex, array $listValue = [], $priority = 0, $indexer = true)
     {
         foreach ($listValue as $value) {
             if ($value != "" && $value != null) {
@@ -681,7 +681,7 @@ class Import
             }
         }
 
-        if (count($listValue) > 0) {
+        if (count($listValue) > 0 && $indexer) {
             $this->createIndexerProduct($idProduct, $idIndex);
         }
     }
