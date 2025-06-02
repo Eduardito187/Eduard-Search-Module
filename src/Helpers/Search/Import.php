@@ -1263,12 +1263,7 @@ class Import
      */
     public function deleteProductMedia($idProduct, $idIndex)
     {
-        $mediaIds = ProductMedia::where('id_product', $idProduct)->where('id_index', $idIndex)->pluck('id_media')->toArray();
-
-        if (!empty($mediaIds)) {
-            Media::whereIn('id', $mediaIds)->delete();
-            ProductMedia::where('id_product', $idProduct)->where('id_index', $idIndex)->delete();
-        }
+        ProductMedia::where('id_product', $idProduct)->where('id_index', $idIndex)->delete();
     }
 
     /**
@@ -1308,7 +1303,6 @@ class Import
                 $newItem->save();
                 return $newItem->id;
             } else {
-                $media->url = $url;
                 $media->updated_at = date("Y-m-d H:i:s");
                 $media->save();
                 return $media->id;
