@@ -22,6 +22,7 @@ use Eduard\Account\Helpers\System\CoreHttp;
 use Eduard\Search\Models\FiltersAttributes;
 use Eduard\Search\Models\IndexConfiguration;
 use Eduard\Search\Models\AttributeFilterType;
+use Eduard\Search\Models\ProductMedia;
 
 class Core
 {
@@ -521,7 +522,7 @@ class Core
                     array(
                         "name" => $productData->name,
                         "sku" => $productData->sku,
-                        "image" => $this->getPicturesProduct($productData)
+                        "image" => $this->getPicturesProduct($productData->id, $indexId)
                     ),
                     $productsAttributes
                 );
@@ -587,16 +588,15 @@ class Core
     }
 
     /**
-     * @param Product $product
-     * @return string|null
+     * @inheritDoc
      */
-    public function getPicturesProduct(Product $product)
+    public function getPicturesProduct($idProduct, $idIndex)
     {
-        foreach ($product->productMedia as $productMedia) {
-            return $productMedia->media->url;
-        }
+        $productMedia = ProductMedia::where("id_product", $idProduct)->where("id_index", $idIndex)->first();
 
-        return null;
+        if (!$productMedia) return null;
+
+        return $productMedia->media->url;
     }
 
     /**
