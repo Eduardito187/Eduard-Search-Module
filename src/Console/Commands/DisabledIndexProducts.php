@@ -3,10 +3,12 @@
 namespace Eduard\Search\Console\Commands;
 
 use Carbon\Carbon;
-use Eduard\Search\Models\IndexProducts;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Eduard\Search\Models\IndexProducts;
+use Eduard\Search\Models\IndexCatalog;
+use Eduard\Search\Models\ProductIndex;
 
 class DisabledIndexProducts extends Command
 {
@@ -44,6 +46,13 @@ class DisabledIndexProducts extends Command
             foreach ($toDelete as $row) {
                 $row->delete();
             }
+        }
+
+        $countItems = ProductIndex::select('id_index', DB::raw('COUNT(*) as total'))->groupBy('id_index')->pluck('total', 'id_index');
+
+        foreach (IndexCatalog::all() as $index) {
+            $index->count_product = $countItems[$index->id] ?? 0;
+            $index->save();
         }
 
         Log::info("Cron disabledIndexProducts ejecutado.");
