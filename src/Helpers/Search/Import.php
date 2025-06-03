@@ -143,14 +143,21 @@ class Import
         foreach ($attributes as $attributeArray) {
             $attribute = $this->getAttributeByCode($attributeArray["code"]);
 
-            if ($attribute && $attributeArray["value"] != "" && $attributeArray["value"] != null) {
+            if ($attribute) {
                 $this->deleteValueProductAttribute($idIndex, $product->id, $attribute->id);
-                $productAttribute = new ProductAttribute();
-                $productAttribute->id_index = $idIndex;
-                $productAttribute->id_product = $product->id;
-                $productAttribute->id_attribute = $attribute->id;
-                $productAttribute->value = $attributeArray["value"];
-                $productAttribute->save();
+
+                if ($attributeArray["code"] == "special_price" && $attributeArray["value"] === null) {
+                    $attributeArray["value"] = 0;
+                }
+
+                if ($attributeArray["value"] !== "" && $attributeArray["value"] !== null) {
+                    $productAttribute = new ProductAttribute();
+                    $productAttribute->id_index = $idIndex;
+                    $productAttribute->id_product = $product->id;
+                    $productAttribute->id_attribute = $attribute->id;
+                    $productAttribute->value = $attributeArray["value"];
+                    $productAttribute->save();
+                }
             }
         }
     }
