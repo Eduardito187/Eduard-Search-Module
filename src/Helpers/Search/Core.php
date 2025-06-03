@@ -66,10 +66,6 @@ class Core
             $suggestions_limit = $body["suggestions_limit"] ?? 0;
             $history_limit = $body["history_limit"] ?? 0;
 
-            if ($index->count_product == 0) {
-                throw new Exception("El indice no cuenta con productos disponible para su busqueda.");
-            }
-
             if (isset($body["filters"])) {
                 $filters = $body["filters"];
             }
@@ -186,10 +182,6 @@ class Core
             $pagination = 1;
             $index = $this->getIndexByApiKey($header["api-key"][0]);
             $customerUuid = $header["customer-uuid"][0];
-    
-            if ($index->count_product == 0) {
-                throw new Exception("El indice no cuenta con productos disponible para su busqueda.");
-            }
 
             if (isset($body["pagination"])) {
                 $pagination = $body["pagination"];
@@ -309,10 +301,6 @@ class Core
             $query = $body["query"];
             $filters = null;
             $index = $this->getIndexByApiKey($header["api-key"][0]);
-    
-            if ($index->count_product == 0) {
-                throw new Exception("El indice no cuenta con productos disponible para su busqueda.");
-            }
 
             if (isset($body["filters"])) {
                 $filters = $body["filters"];
