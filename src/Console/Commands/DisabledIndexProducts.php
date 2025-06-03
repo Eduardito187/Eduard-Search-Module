@@ -6,9 +6,11 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Eduard\Search\Models\IndexProducts;
 use Eduard\Search\Models\IndexCatalog;
 use Eduard\Search\Models\ProductIndex;
+use Eduard\Search\Models\IndexProducts;
+use Eduard\Search\Models\ProductAttribute;
+use Eduard\Search\Models\AttributesRulesExclude;
 
 class DisabledIndexProducts extends Command
 {
@@ -52,10 +54,65 @@ class DisabledIndexProducts extends Command
 
         foreach (IndexCatalog::all() as $index) {
             $index->count_product = $countItems[$index->id] ?? 0;
+            $index->updated_at = date("Y-m-d H:i:s");
             $index->save();
         }
 
+        $this->disabledProductsByCron();
+
         Log::info("Cron disabledIndexProducts ejecutado.");
         return Command::SUCCESS;
+    }
+
+    public function disabledProductsByCron()
+    {
+        $indexes = IndexCatalog::all();
+        $rules = AttributesRulesExclude::all();
+
+        $operadores = [
+            1 => '>=',
+            2 => '>',
+            3 => '<=',
+            4 => '<',
+            5 => '=',
+        ];
+
+        foreach ($indexes as $index) {
+            foreach ($rules as $rule) {
+                $operador = $operadores[$rule->id_condition] ?? null;
+                if (!$operador) {
+                    continue;
+                }
+
+                $query = ProductAttribute::select('product_attribute.id_product')
+                    ->join('product_index', function ($join) use ($index) {
+                        $join->on('product_attribute.id_product', '=', 'product_index.id_product')
+                            ->on('product_attribute.id_index', '=', 'product_index.id_index');
+                    })
+                    ->where('product_attribute.id_attribute', $rule->id_attribute)
+                    ->where('product_attribute.id_index', $index->id)
+                    ->where('product_index.status', 1)
+                    ->whereRaw("product_attribute.value {$operador} ?", [$rule->value])->distinct();
+
+                $idProductsDisabled = $query->pluck('product_attribute.id_product')->toArray();
+
+                if (!empty($idProductsDisabled)) {
+                    ProductIndex::where('status', true)
+                        ->where('id_index', $index->id)
+                        ->whereIn('id_product', $idProductsDisabled)
+                        ->update(['status' => false]);
+
+                    IndexProducts::where('status', true)
+                        ->where('id_index_catalog', $index->id)
+                        ->whereIn('id_product', $idProductsDisabled)
+                        ->update(['status' => false]);
+
+
+                    Log::info("---PRODUCT DISABLED---");
+                    Log::info("ID_INDEX => ".$index->id);
+                    Log::info("LIST_PRODUCT => ".json_encode($idProductsDisabled));
+                }
+            }
+        }
     }
 }
