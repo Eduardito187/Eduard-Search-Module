@@ -84,7 +84,7 @@ class DisabledIndexProducts extends Command
                     continue;
                 }
 
-                $productosQueCumplenCondicion = ProductAttribute::select('product_attribute.id_product')
+                $idProductsDisabled = ProductAttribute::select('product_attribute.id_product')
                     ->join('product_index', function ($join) use ($index) {
                         $join->on('product_attribute.id_product', '=', 'product_index.id_product')
                             ->on('product_attribute.id_index', '=', 'product_index.id_index');
@@ -94,21 +94,6 @@ class DisabledIndexProducts extends Command
                     ->where('product_index.status', 1)
                     ->whereRaw("product_attribute.value {$operador} ?", [$rule->value])
                     ->distinct()->pluck('product_attribute.id_product')->toArray();
-
-                $productosSinEseAtributo = ProductIndex::select('id_product')
-                    ->where('id_index', $index->id)
-                    ->where('status', 1)
-                    ->whereNotIn('id_product', function ($query) use ($rule, $index) {
-                        $query->select('id_product')
-                            ->from('product_attribute')
-                            ->where('id_index', $index->id)
-                            ->where('id_attribute', $rule->id_attribute);
-                    })->pluck('id_product')->toArray();
-
-                $idProductsDisabled = array_unique(array_merge(
-                    $productosQueCumplenCondicion,
-                    $productosSinEseAtributo
-                ));
 
                 if (!empty($idProductsDisabled)) {
                     ProductIndex::where('status', true)
