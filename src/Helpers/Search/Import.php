@@ -681,6 +681,10 @@ class Import
             }
         }
 
+        if ($indexer) {
+            IndexProducts::where('id_index_catalog', $idIndex)->where('id_product', $idProduct)->where('value', 'LIKE', '%⇔%')->delete();
+        }
+
         if (count($listValue) > 0 && $indexer) {
             $this->deleteIndexInvalids($idIndex, $idProduct, $idIndexProduct);
             $this->createIndexerProduct($idProduct, $idIndex);
