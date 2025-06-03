@@ -3,14 +3,14 @@
 namespace Eduard\Search\Console\Commands;
 
 use Carbon\Carbon;
+use Eduard\Search\Models\AttributesRulesExclude;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Eduard\Search\Models\IndexCatalog;
-use Eduard\Search\Models\ProductIndex;
 use Eduard\Search\Models\IndexProducts;
+use Eduard\Search\Models\IndexCatalog;
 use Eduard\Search\Models\ProductAttribute;
-use Eduard\Search\Models\AttributesRulesExclude;
+use Eduard\Search\Models\ProductIndex;
 
 class DisabledIndexProducts extends Command
 {
@@ -84,7 +84,7 @@ class DisabledIndexProducts extends Command
                     continue;
                 }
 
-                $query = ProductAttribute::select('product_attribute.id_product')
+                $productosQueCumplenCondicion = ProductAttribute::select('product_attribute.id_product')
                     ->join('product_index', function ($join) use ($index) {
                         $join->on('product_attribute.id_product', '=', 'product_index.id_product')
                             ->on('product_attribute.id_index', '=', 'product_index.id_index');
@@ -92,9 +92,23 @@ class DisabledIndexProducts extends Command
                     ->where('product_attribute.id_attribute', $rule->id_attribute)
                     ->where('product_attribute.id_index', $index->id)
                     ->where('product_index.status', 1)
-                    ->whereRaw("product_attribute.value {$operador} ?", [$rule->value])->distinct();
+                    ->whereRaw("product_attribute.value {$operador} ?", [$rule->value])
+                    ->distinct()->pluck('product_attribute.id_product')->toArray();
 
-                $idProductsDisabled = $query->pluck('product_attribute.id_product')->toArray();
+                $productosSinEseAtributo = ProductIndex::select('id_product')
+                    ->where('id_index', $index->id)
+                    ->where('status', 1)
+                    ->whereNotIn('id_product', function ($query) use ($rule, $index) {
+                        $query->select('id_product')
+                            ->from('product_attribute')
+                            ->where('id_index', $index->id)
+                            ->where('id_attribute', $rule->id_attribute);
+                    })->pluck('id_product')->toArray();
+
+                $idProductsDisabled = array_unique(array_merge(
+                    $productosQueCumplenCondicion,
+                    $productosSinEseAtributo
+                ));
 
                 if (!empty($idProductsDisabled)) {
                     ProductIndex::where('status', true)
@@ -106,7 +120,6 @@ class DisabledIndexProducts extends Command
                         ->where('id_index_catalog', $index->id)
                         ->whereIn('id_product', $idProductsDisabled)
                         ->update(['status' => false]);
-
 
                     Log::info("---PRODUCT DISABLED---");
                     Log::info("ID_INDEX => ".$index->id);
