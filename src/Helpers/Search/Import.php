@@ -190,16 +190,6 @@ class Import
     /**
      * @inheritDoc
      */
-    public function incrementIndexProductCount()
-    {
-        $indexCatalog = $this->indexConfiguration->indexCatalog;
-        $indexCatalog->count_product = $indexCatalog->count_product + 1;
-        $indexCatalog->save();
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function singleProduct($params, $headers)
     {
         try {
@@ -1229,7 +1219,6 @@ class Import
                     $product["sku"],
                     $currentClient->id
                 );
-                $this->incrementIndexProductCount();
             }
 
             if ($productEntity != null) {
