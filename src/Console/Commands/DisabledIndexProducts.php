@@ -91,7 +91,6 @@ class DisabledIndexProducts extends Command
                     })
                     ->where('product_attribute.id_attribute', $rule->id_attribute)
                     ->where('product_attribute.id_index', $index->id)
-                    ->where('product_index.status', 1)
                     ->whereRaw("product_attribute.value {$operador} ?", [$rule->value])
                     ->distinct()->pluck('product_attribute.id_product')->toArray();
 
@@ -99,12 +98,12 @@ class DisabledIndexProducts extends Command
                     ProductIndex::where('status', true)
                         ->where('id_index', $index->id)
                         ->whereIn('id_product', $idProductsDisabled)
-                        ->update(['status' => false]);
+                        ->update(['status' => 0]);
 
                     IndexProducts::where('status', true)
                         ->where('id_index_catalog', $index->id)
                         ->whereIn('id_product', $idProductsDisabled)
-                        ->update(['status' => false]);
+                        ->update(['status' => 0]);
 
                     Log::info("---PRODUCT DISABLED---");
                     Log::info("ID_INDEX => ".$index->id);
