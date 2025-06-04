@@ -268,12 +268,16 @@ class Core
      */
     public function searchInIndexProducts($index, $query)
     {
+        /*
         return IndexProducts::query()->select('index_products.id_product')->join('product_index', function ($join) {
                 $join->on('index_products.id_product', '=', 'product_index.id_product')
                     ->on('index_products.id_index_catalog', '=', 'product_index.id_index');
             })->where('index_products.id_index_catalog', $index)->where('index_products.value', 'like', '%' . $query . '%')
             ->where('index_products.status', 1)->where('product_index.status', 1)->orderBy('index_products.index_priority', 'desc')
             ->pluck('index_products.id_product')->unique()->values()->toArray();
+        */
+        return IndexProducts::where('id_index_catalog', $index)->where('value', 'like', '%' . $query . '%')->where('status', 1)->orderBy('index_priority', 'desc')
+            ->pluck('id_product')->unique()->values()->toArray();
     }
 
     /**
