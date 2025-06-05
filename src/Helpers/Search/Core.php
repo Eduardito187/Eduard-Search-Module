@@ -481,6 +481,7 @@ class Core
         $itemsResponse = [];
         $numberFormat = [];
     	$arrayFormat = [];
+        $productsAttributes = [];
         $allAttributes = $this->getAllAtributesIdEnabled($indexId);
         $price = Attributes::where('code', 'price')->where('id_client', $clientId)->first();
         $specialPrice = Attributes::where('code', 'special_price')->where('id_client', $clientId)->first();
@@ -488,7 +489,6 @@ class Core
 
         foreach ($products as $productData) {
             $valueAttribute = [];
-            $productsAttributes = [];
 
             foreach ($allAttributes as $key => $idAttribute) {
                 $valueAttribute = $this->getProductAttributeIndexValue($idAttribute, $productData->id, $indexId, $numberFormat, $arrayFormat);
