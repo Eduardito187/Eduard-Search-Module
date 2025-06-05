@@ -652,6 +652,15 @@ class Import
     /**
      * @inheritDoc
      */
+    public function disableProduct($idIndex, $idProduct)
+    {
+        ProductIndex::where('status', true)->where('id_index', $idIndex)->where('id_product', $idProduct)->update(['status' => false]);
+        IndexProducts::where('status', true)->where('id_index_catalog', $idIndex)->where('id_product', $idProduct)->update(['status' => false]);
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function savedIndex(int $idProduct, int $idIndex, array $listValue = [], $priority = 0, $indexer = true)
     {
         $idIndexProduct = [];
