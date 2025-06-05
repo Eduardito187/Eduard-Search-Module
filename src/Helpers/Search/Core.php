@@ -482,7 +482,7 @@ class Core
         $numberFormat = [];
     	$arrayFormat = [];
         $productsAttributes = [];
-        $allAttributes = $this->getAllAtributesIdEnabled($indexId);
+        $allAttributes = $this->getAllAtributesIdEnabled();
         $price = Attributes::where('code', 'price')->where('id_client', $clientId)->first();
         $specialPrice = Attributes::where('code', 'special_price')->where('id_client', $clientId)->first();
         $numberFormat = [$price->id, $specialPrice->id];
@@ -651,9 +651,9 @@ class Core
     /**
      * @return array
      */
-    public function getAllAtributesIdEnabled($idIndex)
+    public function getAllAtributesIdEnabled()
     {
-        return Attributes::where('status', true)->where('id_client', $idIndex)->pluck('id')->unique()->toArray();
+        return Attributes::where('status', true)->pluck('id')->unique()->toArray();
     }
 
     /**
