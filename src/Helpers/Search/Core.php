@@ -97,7 +97,7 @@ class Core
                 $responseProductIds = array_slice($idProductList, 0, $limit_search);
             }
 
-            $responseProducts = $this->responseProducts($responseProductIds, $index, true);
+            $responseProducts = $this->responseProducts($responseProductIds, $index);
             $searchTimeEnd = microtime(true);
 
             Event::dispatch(
