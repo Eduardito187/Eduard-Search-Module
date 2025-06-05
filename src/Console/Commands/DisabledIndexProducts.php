@@ -104,10 +104,6 @@ class DisabledIndexProducts extends Command
                         ->where('id_index_catalog', $index->id)
                         ->whereIn('id_product', $idProductsDisabled)
                         ->update(['status' => 0]);
-
-                    Log::info("---PRODUCT DISABLED---");
-                    Log::info("ID_INDEX => ".$index->id);
-                    Log::info("LIST_PRODUCT => ".json_encode($idProductsDisabled));
                 }
             }
         }
