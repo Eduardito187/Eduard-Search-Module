@@ -778,13 +778,14 @@ class Core
      */
     public function getBackupQuery($idIndex, $customer, $query, $resultProducts, $filters)
     {
-        $backup = BackupQuery::where('id_index', $idIndex)->whereRaw('LOWER(query) = ?', [strtolower($query)])->where('filters', json_encode($filters))->first();
+        //->where('filters', json_encode($filters))
+        $backup = BackupQuery::where('id_index', $idIndex)->whereRaw('LOWER(query) = ?', [strtolower($query)])->first();
 
-        if (!$backup) {
-            return null;
+        if ($backup != null) {
+            return $backup;
         }
 
-        return $backup;
+        return null;
     }
 
     /**
