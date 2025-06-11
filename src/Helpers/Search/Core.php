@@ -268,7 +268,7 @@ class Core
      */
     public function searchInIndexProducts($index, $query)
     {
-        if (strlen($query) < 3) return [];
+        if (strlen($query) < 2) return [];
         //v1
         /*
         return IndexProducts::query()->select('index_products.id_product')->join('product_index', function ($join) {
