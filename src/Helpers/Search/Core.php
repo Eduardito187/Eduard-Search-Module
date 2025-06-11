@@ -269,7 +269,7 @@ class Core
     public function searchInIndexProducts($index, $query)
     {
         if (strlen($query) < 3) return [];
-
+        //v1
         /*
         return IndexProducts::query()->select('index_products.id_product')->join('product_index', function ($join) {
                 $join->on('index_products.id_product', '=', 'product_index.id_product')
@@ -278,13 +278,26 @@ class Core
             ->where('index_products.status', 1)->where('product_index.status', 1)->orderBy('index_products.index_priority', 'desc')
             ->pluck('index_products.id_product')->unique()->values()->toArray();
         */
+        //v2
         /*
         return IndexProducts::where('id_index_catalog', $index)->where('value', 'like', '%' . $query . '%')->where('status', 1)->orderBy('index_priority', 'desc')
             ->pluck('id_product')->unique()->values()->toArray();
             */
+        //v3
+        /*
         return IndexProducts::where('id_index_catalog', $index)->whereRaw("value COLLATE utf8mb4_general_ci LIKE ?", ['%' . $query . '%'])
             ->where('status', 1)->orderBy('index_priority', 'desc')
             ->pluck('id_product')->unique()->values()->toArray();
+            */
+
+        $queryTerms = explode(' ', strtolower($query));
+
+        return IndexProducts::where('id_index_catalog', $index)
+            ->where(function ($q) use ($queryTerms) {
+                foreach ($queryTerms as $term) {
+                    $q->whereRaw("LOWER(value) LIKE ?", ["%$term%"]);
+                }
+            })->where('status', 1)->orderBy('index_priority', 'desc')->pluck('id_product')->unique()->values()->toArray();
     }
 
     /**
