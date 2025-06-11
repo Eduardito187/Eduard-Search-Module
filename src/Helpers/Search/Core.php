@@ -268,6 +268,8 @@ class Core
      */
     public function searchInIndexProducts($index, $query)
     {
+        if (strlen($query) < 3) return [];
+
         /*
         return IndexProducts::query()->select('index_products.id_product')->join('product_index', function ($join) {
                 $join->on('index_products.id_product', '=', 'product_index.id_product')
@@ -276,7 +278,12 @@ class Core
             ->where('index_products.status', 1)->where('product_index.status', 1)->orderBy('index_products.index_priority', 'desc')
             ->pluck('index_products.id_product')->unique()->values()->toArray();
         */
+        /*
         return IndexProducts::where('id_index_catalog', $index)->where('value', 'like', '%' . $query . '%')->where('status', 1)->orderBy('index_priority', 'desc')
+            ->pluck('id_product')->unique()->values()->toArray();
+            */
+        return IndexProducts::where('id_index_catalog', $index)->whereRaw("value COLLATE utf8mb4_general_ci LIKE ?", ['%' . $query . '%'])
+            ->where('status', 1)->orderBy('index_priority', 'desc')
             ->pluck('id_product')->unique()->values()->toArray();
     }
 
