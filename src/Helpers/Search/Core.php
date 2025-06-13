@@ -285,7 +285,7 @@ class Core
             ->pluck('id_product')->unique()->values()->toArray();
             */
         //V4
-        /*
+
         $queryTerms = explode(' ', strtolower($query));
 
         return IndexProducts::where('id_index_catalog', $index)
@@ -294,7 +294,7 @@ class Core
                     $q->whereRaw("LOWER(value) LIKE ?", ["%$term%"]);
                 }
             })->where('status', 1)->orderBy('index_priority', 'desc')->pluck('id_product')->unique()->values()->toArray();
-        */
+        
         $queryTerms = explode(' ', strtolower($query));
         $searchString = implode(' ', $queryTerms);
 
