@@ -14,7 +14,7 @@ class HistorySearch
     /**
      * @inheritDoc
      */
-    public function saveQuerySearchHistory($idClient, $idIndex, $customerUuid, $query, $countItems, $timeExecution, $code)
+    public function saveQuerySearchHistory($idClient, $idIndex, $customerUuid, $query, $countItems, $timeExecution, $code, $values = [])
     {
         try {
             $newHistoryQuerySearch = new HistoryQuerySearch();
@@ -25,6 +25,7 @@ class HistorySearch
             $newHistoryQuerySearch->count_items = $countItems;
             $newHistoryQuerySearch->time_execution = $timeExecution;
             $newHistoryQuerySearch->code = $code;
+            $newHistoryQuerySearch->values = json_encode($values);
             $newHistoryQuerySearch->created_at = date("Y-m-d H:i:s");
             $newHistoryQuerySearch->updated_at = null;
             $newHistoryQuerySearch->save();
