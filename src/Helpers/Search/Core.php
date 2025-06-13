@@ -12,7 +12,6 @@ use Eduard\Search\Models\IndexCatalog;
 use Eduard\Search\Models\ProductIndex;
 use Eduard\Search\Models\IndexProducts;
 use Illuminate\Support\Facades\Session;
-use Eduard\Search\Models\ProductVectors;
 use Eduard\Search\Events\SearchProccess;
 use Eduard\Search\Models\RankingSorting;
 use Eduard\Search\Models\AttributeSearch;
