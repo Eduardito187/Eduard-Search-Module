@@ -264,37 +264,7 @@ class Core
     public function searchInIndexProducts($index, $query)
     {
         if (strlen($query) < 2) return [];
-        //v1
-        /*
-        return IndexProducts::query()->select('index_products.id_product')->join('product_index', function ($join) {
-                $join->on('index_products.id_product', '=', 'product_index.id_product')
-                    ->on('index_products.id_index_catalog', '=', 'product_index.id_index');
-            })->where('index_products.id_index_catalog', $index)->where('index_products.value', 'like', '%' . $query . '%')
-            ->where('index_products.status', 1)->where('product_index.status', 1)->orderBy('index_products.index_priority', 'desc')
-            ->pluck('index_products.id_product')->unique()->values()->toArray();
-        */
-        //v2
-        /*
-        return IndexProducts::where('id_index_catalog', $index)->where('value', 'like', '%' . $query . '%')->where('status', 1)->orderBy('index_priority', 'desc')
-            ->pluck('id_product')->unique()->values()->toArray();
-            */
-        //v3
-        /*
-        return IndexProducts::where('id_index_catalog', $index)->whereRaw("value COLLATE utf8mb4_general_ci LIKE ?", ['%' . $query . '%'])
-            ->where('status', 1)->orderBy('index_priority', 'desc')
-            ->pluck('id_product')->unique()->values()->toArray();
-            */
-        //V4
-        /*
-        $queryTerms = explode(' ', strtolower($query));
 
-        return IndexProducts::where('id_index_catalog', $index)
-            ->where(function ($q) use ($queryTerms) {
-                foreach ($queryTerms as $term) {
-                    $q->whereRaw("LOWER(value) LIKE ?", ["%$term%"]);
-                }
-            })->where('status', 1)->orderBy('index_priority', 'desc')->pluck('id_product')->unique()->values()->toArray();
-        */
         $queryTerms = explode(' ', strtolower($query));
         $fulltextQuery = implode('* +', $queryTerms) . '*';
 
@@ -837,36 +807,15 @@ class Core
 
         if (empty($tokensBusqueda)) return [];
 
-        $tokensBusqueda = array_map('strtolower', $tokensBusqueda);
-        $resultados = [];
-        $productos = ProductVectors::with('product')->get();
-
-        foreach ($productos as $registro) {
-            //$coincide = false;
-
-            foreach ($tokensBusqueda as $tokenBuscado) {
-                foreach (array_keys($registro->vector) as $tokenVector) {
-                    if (stripos($tokenVector, $tokenBuscado) !== false) {
-                        if (!in_array($tokenVector, $resultados) && $tokenVector != $tokenBuscado) {
-                            $resultados[] = $tokenVector;
-                        }
-                        //$coincide = true;
-                        break 2;
-                    }
-                }
-            }
-
-            /*
-            #retornado de productos
-            if ($coincide && isset($registro->product)) {
-                $resultados[] = $registro->product->name;
-            }
-            */
-
-            if (count($resultados) >= $limite) break;
+        try {
+            $fulltext = '+' . implode('* +', array_map('strtolower', $tokensBusqueda)) . '*';
+    
+            return DB::table('product_vector_tokens')
+                ->select('token')->whereRaw("MATCH(token) AGAINST (? IN BOOLEAN MODE)", [$fulltext])
+                ->distinct()->limit($limite)->pluck('token')->toArray();
+        } catch (Exception $e) {
+            return [];
         }
-
-        return $resultados;
     }
 
     /**
@@ -884,11 +833,20 @@ class Core
         $tf = $this->calcularTF($tokens);
         $idf = array_fill_keys(array_keys($tf), 1);
         $vector = $this->vectorizar($tf, $idf);
+        DB::table('product_vector_tokens')->where('product_id', $product->id)->delete();
 
-        ProductVectors::updateOrCreate(
-            ['product_id' => $product->id],
-            ['vector' => $vector]
-        );
+        $tokensInsert = [];
+        foreach ($vector as $token => $relevance) {
+            $tokensInsert[] = [
+                'product_id' => $product->id,
+                'token' => strtolower($token),
+                'relevance' => floatval($relevance),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        DB::table('product_vector_tokens')->insert($tokensInsert);
     }
 
     /**
