@@ -12,7 +12,7 @@ class HistoryQuerySearch extends Model
     use HasFactory;
 
     protected $table = 'history_query_search';
-    protected $fillable = ['id_client', 'id_index', 'customer_uuid', 'query', 'time_execution', 'code', 'count_items'];
+    protected $fillable = ['id_client', 'id_index', 'customer_uuid', 'query', 'time_execution', 'code', 'count_items', 'values'];
     protected $hidden = ['created_at', 'updated_at'];
     protected $primaryKey = 'id';
     public $incrementing = true;
