@@ -16,7 +16,6 @@ use Eduard\Search\Models\ProductVectors;
 use Eduard\Search\Events\SearchProccess;
 use Eduard\Search\Models\RankingSorting;
 use Eduard\Search\Models\AttributeSearch;
-use Eduard\Search\Models\HistoryCustomer;
 use Eduard\Search\Models\ProductAttribute;
 use Eduard\Account\Helpers\System\CoreHttp;
 use Eduard\Search\Models\FiltersAttributes;
@@ -88,10 +87,6 @@ class Core
                 }
 
                 $responseProductIds = array_slice($idProductList, 0, $limit_search);
-
-                if (count($responseProductIds) > 0) {
-                    $this->setHistoryResult($index->id, $customerUuid, $query, $responseProductIds);
-                }
             } else {
                 $idProductList = json_decode($backupQuery->list_products);
                 $responseProductIds = array_slice($idProductList, 0, $limit_search);
@@ -106,9 +101,10 @@ class Core
                     $index->id,
                     $customerUuid,
                     $query,
-                    count($idProductList),
+                    count($responseProductIds),
                     (($searchTimeEnd - Session::get('start_time')) * 1000),
-                    "feed_response"
+                    "feed_response",
+                    $responseProductIds
                 )
             );
 
@@ -127,7 +123,8 @@ class Core
                     $query,
                     count($suggestionResponse),
                     (($suggestionTimeEnd - $suggestionTimeStart) * 1000),
-                    "suggestion_feed_response"
+                    "suggestion_feed_response",
+                    $suggestionResponse
                 )
             );
 
@@ -139,7 +136,8 @@ class Core
                     $query,
                     count($historyResponse),
                     (($historyTimeEnd - $historyTimeStart) * 1000),
-                    "history_feed_response"
+                    "history_feed_response",
+                    $historyResponse,
                 )
             );
 
@@ -222,10 +220,6 @@ class Core
                 }
         
                 $responseProductIds = array_slice($idProductList, (($pagination - 1) * $this->indexConfiguration->page_limit), $this->indexConfiguration->page_limit);
-    
-                if (count($responseProductIds) > 0) {
-                    $this->setHistoryResult($index->id, $customerUuid, $query, $responseProductIds);
-                }
             } else {
                 $idProductList = json_decode($backupQuery->list_products);
                 $responseProductIds = array_slice($idProductList, (($pagination - 1) * $this->indexConfiguration->page_limit), $this->indexConfiguration->page_limit);
@@ -240,9 +234,10 @@ class Core
                     $index->id,
                     $customerUuid,
                     $query,
-                    count($idProductList),
+                    count($responseProductIds),
                     (($searchTimeEnd - Session::get('start_time')) * 1000),
-                    "page_search_response"
+                    "page_search_response",
+                    $responseProductIds
                 )
             );
     
@@ -823,20 +818,6 @@ class Core
         $newItem->filters = json_encode($filters);
         $newItem->created_at = date('Y-m-d H:i:s');
         $newItem->save();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function setHistoryResult($idIndex, $customer, $query, $resultProducts)
-    {
-        $HistoryCustomer = new HistoryCustomer();
-        $HistoryCustomer->id_index = $idIndex;
-        $HistoryCustomer->customer_uuid = $customer;
-        $HistoryCustomer->query = $query;
-        $HistoryCustomer->count_result = count($resultProducts);
-        $HistoryCustomer->created_at = date('Y-m-d H:i:s');
-        $HistoryCustomer->save();
     }
 
     /**
