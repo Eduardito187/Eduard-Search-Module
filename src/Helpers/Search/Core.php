@@ -764,7 +764,7 @@ class Core
     public function getBackupQuery($idIndex, $customer, $query, $resultProducts, $filters)
     {
         //->where('filters', json_encode($filters))
-        $backup = BackupQuery::where('id_index', $idIndex)->whereRaw('LOWER(query) = ?', [strtolower($query)])->first();
+        $backup = BackupQuery::where('id_index', $idIndex)->whereRaw("MATCH(query) AGAINST (? IN BOOLEAN MODE)", [$query])->first();
 
         if ($backup != null) {
             return $backup;
@@ -778,8 +778,8 @@ class Core
      */
     public function getBackupHistory($idIndex, $customer, $query, $history_limit)
     {
-        return BackupQuery::where('id_index', $idIndex)->where('customer_uuid', $customer)->where('query', 'like', '%' . $query . '%')->
-            where('query', '!=', $query)->pluck('query')->unique()->values()->take($history_limit)->toArray();
+        return BackupQuery::where('id_index', $idIndex)->where('customer_uuid', $customer)->whereRaw("MATCH(query) AGAINST (? IN BOOLEAN MODE)", [$query])
+            ->where('query', '!=', $query)->limit($history_limit)->pluck('query')->unique()->values()->toArray();
     }
 
     /**
@@ -809,9 +809,10 @@ class Core
         try {
             $fulltext = '+' . implode('* +', array_map('strtolower', $tokensBusqueda)) . '*';
     
-            return DB::table('product_vector_tokens')
-                ->select('token')->whereRaw("MATCH(token) AGAINST (? IN BOOLEAN MODE)", [$fulltext])
-                ->distinct()->limit($limite)->pluck('token')->toArray();
+            return DB::table('product_vector_tokens')->select('token')
+                ->whereRaw("MATCH(token) AGAINST (? IN BOOLEAN MODE)", [$fulltext])
+                ->orderByRaw("MATCH(token) AGAINST (? IN BOOLEAN MODE) DESC", [$fulltext])->distinct()
+                ->limit($limite)->pluck('token')->toArray();
         } catch (Exception $e) {
             return [];
         }
