@@ -46,7 +46,7 @@ class SearchProccess
     public $code;
 
     /**
-     * @var array
+     * @var string
      */
     public $values;
 
