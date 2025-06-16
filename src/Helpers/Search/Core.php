@@ -847,13 +847,15 @@ class Core
 
         $tokensInsert = [];
         foreach ($vector as $token => $relevance) {
-            $tokensInsert[] = [
-                'product_id' => $product->id,
-                'token' => strtolower($token),
-                'relevance' => floatval($relevance),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+            if (strlen($token) > 3) {
+                $tokensInsert[] = [
+                    'product_id' => $product->id,
+                    'token' => strtolower($token),
+                    'relevance' => floatval($relevance),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
         }
 
         DB::table('product_vector_tokens')->insert($tokensInsert);
