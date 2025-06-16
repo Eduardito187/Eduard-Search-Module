@@ -103,7 +103,7 @@ class Core
                     count($responseProductIds),
                     (($searchTimeEnd - Session::get('start_time')) * 1000),
                     "feed_response",
-                    $responseProductIds
+                    json_encode($responseProducts)
                 )
             );
 
@@ -123,7 +123,7 @@ class Core
                     count($suggestionResponse),
                     (($suggestionTimeEnd - $suggestionTimeStart) * 1000),
                     "suggestion_feed_response",
-                    $suggestionResponse
+                    json_encode($suggestionResponse)
                 )
             );
 
@@ -136,7 +136,7 @@ class Core
                     count($historyResponse),
                     (($historyTimeEnd - $historyTimeStart) * 1000),
                     "history_feed_response",
-                    $historyResponse,
+                    json_encode($historyResponse)
                 )
             );
 
@@ -236,7 +236,7 @@ class Core
                     count($responseProductIds),
                     (($searchTimeEnd - Session::get('start_time')) * 1000),
                     "page_search_response",
-                    $responseProductIds
+                    json_encode($responseProducts)
                 )
             );
     
