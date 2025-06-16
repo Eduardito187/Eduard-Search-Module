@@ -264,12 +264,18 @@ class Core
     {
         if (strlen($query) < 2) return [];
 
-        $queryTerms = explode(' ', strtolower($query));
-        $fulltextQuery = implode('* +', $queryTerms) . '*';
-
-        return IndexProducts::where('id_index_catalog', $index)->whereRaw("MATCH(value) AGAINST (? IN BOOLEAN MODE)", ["+$fulltextQuery"])
-            ->where('status', 1)->orderBy('index_priority', 'desc')
-            ->pluck('id_product')->unique()->values()->toArray();
+        if (preg_match('/[^a-z0-9 ]/i', $query)) {
+            return IndexProducts::where('id_index_catalog', $index)
+                ->where('value', 'like', "%$query%")->where('status', 1)->orderBy('index_priority', 'desc')
+                ->pluck('id_product')->unique()->values()->toArray();
+        } else {
+            $queryTerms = explode(' ', strtolower($query));
+            $fulltextQuery = implode('* +', $queryTerms) . '*';
+    
+            return IndexProducts::where('id_index_catalog', $index)->whereRaw("MATCH(value) AGAINST (? IN BOOLEAN MODE)", ["+$fulltextQuery"])
+                ->where('status', 1)->orderBy('index_priority', 'desc')
+                ->pluck('id_product')->unique()->values()->toArray();
+        }
     }
 
     /**
@@ -808,14 +814,13 @@ class Core
 
         try {
             return DB::table('product_vector_tokens')->select('token')
-                ->where(function ($query) use ($tokensBusqueda) {
-                    foreach ($tokensBusqueda as $word) {
-                        $query->orWhere(function ($subQuery) use ($word) {
-                            $subQuery->where('token', 'like', '%' . strtolower($word) . '%')
-                                    ->where('token', '!=', strtolower($word));
-                        });
-                    }
-                })->distinct()->limit($limite)->pluck('token')->toArray();
+            ->where(function ($query) use ($tokensBusqueda) {
+                foreach ($tokensBusqueda as $word) {
+                    $query->orWhere(function ($subQuery) use ($word) {
+                        $subQuery->where('token', 'like', '%' . strtolower($word) . '%')->where('token', '!=', strtolower($word))->whereRaw("token REGEXP '[^0-9\\.]'");
+                    });
+                }
+            })->distinct()->limit($limite)->pluck('token')->toArray();
         } catch (Exception $e) {
             return [];
         }
