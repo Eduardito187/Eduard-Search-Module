@@ -807,12 +807,15 @@ class Core
         if (empty($tokensBusqueda)) return [];
 
         try {
-            $fulltext = '+' . implode('* +', array_map('strtolower', $tokensBusqueda)) . '*';
-    
             return DB::table('product_vector_tokens')->select('token')
-                ->whereRaw("MATCH(token) AGAINST (? IN BOOLEAN MODE)", [$fulltext])
-                ->orderByRaw("MATCH(token) AGAINST (? IN BOOLEAN MODE) DESC", [$fulltext])->distinct()
-                ->limit($limite)->pluck('token')->toArray();
+                ->where(function ($query) use ($tokensBusqueda) {
+                    foreach ($tokensBusqueda as $word) {
+                        $query->orWhere(function ($subQuery) use ($word) {
+                            $subQuery->where('token', 'like', '%' . strtolower($word) . '%')
+                                    ->where('token', '!=', strtolower($word));
+                        });
+                    }
+                })->distinct()->limit($limite)->pluck('token')->toArray();
         } catch (Exception $e) {
             return [];
         }
