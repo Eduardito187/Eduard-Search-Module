@@ -764,7 +764,7 @@ class Core
     public function getBackupQuery($idIndex, $customer, $query, $resultProducts, $filters)
     {
         //->where('filters', json_encode($filters))
-        $backup = BackupQuery::where('id_index', $idIndex)->whereRaw("MATCH(query) AGAINST (? IN BOOLEAN MODE)", [$query])->first();
+        $backup = BackupQuery::where('id_index', $idIndex)->where('query', $query)->first();
 
         if ($backup != null) {
             return $backup;
