@@ -53,7 +53,7 @@ class AfterSearchProccess implements ShouldQueue
             $event->countItems,
             $event->timeExecution,
             $event->code,
-            $event->values ?? []
+            $event->values ?? '[]'
         );
     }
 }
