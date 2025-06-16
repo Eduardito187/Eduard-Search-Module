@@ -813,11 +813,13 @@ class Core
         if (empty($tokensBusqueda)) return [];
 
         try {
-            return DB::table('product_vector_tokens')->select('token')
-            ->where(function ($query) use ($tokensBusqueda) {
+            return DB::table('product_vector_tokens')->select('token')->where(function ($query) use ($tokensBusqueda) {
                 foreach ($tokensBusqueda as $word) {
                     $query->orWhere(function ($subQuery) use ($word) {
-                        $subQuery->where('token', 'like', '%' . strtolower($word) . '%')->where('token', '!=', strtolower($word))->whereRaw("token REGEXP '[^0-9\\.]'");
+                        $subQuery->where('token', 'like', '%' . strtolower($word) . '%')
+                                ->where('token', '!=', strtolower($word))
+                                ->whereRaw("token REGEXP '[^0-9\\.]'")
+                                ->whereRaw("CHAR_LENGTH(token) > 3");
                     });
                 }
             })->distinct()->limit($limite)->pluck('token')->toArray();
