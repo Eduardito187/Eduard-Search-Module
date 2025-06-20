@@ -1465,7 +1465,7 @@ class Import
             }
         }
 
-        foreach ($currentClient->indexes as $key => $index) {
+        foreach ($currentClient->prefixIndexes($this->coreHttp->prefix) as $key => $index) {
             $this->disabledSearchNoProccess($attributesProccess, $index->id);
         }
     }
@@ -1494,7 +1494,7 @@ class Import
 
                 if ($attributeItem != null) {
 
-                    foreach ($currentClient->indexes as $key => $index) {
+                    foreach ($currentClient->prefixIndexes($this->coreHttp->prefix) as $key => $index) {
                         $attributeSorting = $this->getAttributeSortingByIndex($attributeItem->id, $index->id);
 
                         if (!$attributeSorting) {
@@ -1524,7 +1524,7 @@ class Import
             }
         }
 
-        foreach ($currentClient->indexes as $key => $index) {
+        foreach ($currentClient->prefixIndexes($this->coreHttp->prefix) as $key => $index) {
             $this->disabledOrderNoProccess($attributesProccess, $index->id);
         }
     }
