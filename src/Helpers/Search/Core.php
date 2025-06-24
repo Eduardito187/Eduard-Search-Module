@@ -264,18 +264,33 @@ class Core
     {
         if (strlen($query) < 2) return [];
 
-        if (preg_match('/[^a-z0-9 ]/i', $query)) {
+        if ($this->isValidCustomString($query)) {
             return IndexProducts::where('id_index_catalog', $index)
                 ->where('value', 'like', "%$query%")->where('status', 1)->orderBy('index_priority', 'desc')
                 ->pluck('id_product')->unique()->values()->toArray();
         } else {
             $queryTerms = array_filter(explode(' ', strtolower($query)),fn($term) => strlen($term) >= 3);
-            $fulltextQuery = implode('* +', $queryTerms) . '*';
+            $fulltextQuery = implode('* +',$queryTerms).'*';
 
             return IndexProducts::where('id_index_catalog', $index)->whereRaw("MATCH(value) AGAINST (? IN BOOLEAN MODE)", ["+$fulltextQuery"])
-                ->where('status', 1)->orderBy('index_priority', 'desc')
-                ->pluck('id_product')->unique()->values()->toArray();
+                ->where('status', 1)->orderBy('index_priority', 'desc')->pluck('id_product')->unique()->values()->toArray();
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function isValidCustomString($query)
+    {
+        if (!preg_match('/^[a-zA-Z0-9_-]+$/', $query)) {
+            return false;
+        }
+    
+        if (preg_match('/^[a-zA-Z]+$/', $query)) {
+            return false;
+        }
+    
+        return true;
     }
 
     /**
