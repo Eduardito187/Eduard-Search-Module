@@ -103,7 +103,7 @@ class Core
                     count($responseProductIds),
                     (($searchTimeEnd - Session::get('start_time')) * 1000),
                     "feed_response",
-                    json_encode($responseProducts)
+                    json_encode($responseProductIds)
                 )
             );
 
@@ -236,7 +236,7 @@ class Core
                     count($responseProductIds),
                     (($searchTimeEnd - Session::get('start_time')) * 1000),
                     "page_search_response",
-                    json_encode($responseProducts)
+                    json_encode($responseProductIds)
                 )
             );
     
