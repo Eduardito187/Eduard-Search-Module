@@ -269,11 +269,18 @@ class Core
                 ->where('value', 'like', "%$query%")->where('status', 1)->orderBy('index_priority', 'desc')
                 ->pluck('id_product')->unique()->values()->toArray();
         } else {
-            $queryTerms = array_filter(explode(' ', strtolower($query)),fn($term) => strlen($term) >= 3);
-            $fulltextQuery = implode('* +',$queryTerms).'*';
-
-            return IndexProducts::where('id_index_catalog', $index)->whereRaw("MATCH(value) AGAINST (? IN BOOLEAN MODE)", ["+$fulltextQuery"])
-                ->where('status', 1)->orderBy('index_priority', 'desc')->pluck('id_product')->unique()->values()->toArray();
+            $queryTerms = array_filter(
+                explode(' ', strtolower($query)),
+                fn($term) => strlen($term) >= 2
+            );
+            $stopWords = ['el', 'la', 'los', 'las', 'de', 'y', 'en', 'a', 'un', 'una', 'que', 'con', 'por', 'para', 'se', 'al', 'del'];
+            $filteredTerms = array_values(array_diff($queryTerms, $stopWords));
+            
+            $fulltextQuery = implode('* +', $filteredTerms) . '*';
+            
+            return IndexProducts::where('id_index_catalog', $index)
+                ->whereRaw("MATCH(value) AGAINST (? IN BOOLEAN MODE)", ["+$fulltextQuery"])->where('status', 1)->orderBy('index_priority', 'desc')
+                ->pluck('id_product')->unique()->values()->toArray();
         }
     }
 
