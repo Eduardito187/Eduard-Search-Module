@@ -65,28 +65,28 @@ class IndexCatalog extends Model
     /**
      * @inheritDoc
      */
-    public function recentMonthHistoryQuerySearch() {
-        return $this->hasMany(HistoryQuerySearch::class, 'id_index', 'id')->whereIn('code', ['feed_response', 'page_search_response'])->where('created_at', '>=', now()->subDays(30));
+    public function recentMonthHistoryQuerySearch($idIndex, $idClient) {
+        return HistoryQuerySearch::where('id_index', $idIndex)->where('id_client', $idClient)->whereIn('code', ['feed_response', 'page_search_response'])->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count();
     }
 
     /**
      * @inheritDoc
      */
-    public function recentMonthHistoryQuerySearchFeed() {
-        return $this->hasMany(HistoryQuerySearch::class, 'id_index', 'id')->where('code', 'feed_response')->where('created_at', '>=', now()->subDays(30));
+    public function recentMonthHistoryQuerySearchFeed($idIndex, $idClient) {
+        return HistoryQuerySearch::where('id_index', $idIndex)->where('id_client', $idClient)->whereIn('code', 'feed_response')->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count();
     }
 
     /**
      * @inheritDoc
      */
-    public function recentMonthHistoryQuerySearchPage() {
-        return $this->hasMany(HistoryQuerySearch::class, 'id_index', 'id')->where('code', 'page_search_response')->where('created_at', '>=', now()->subDays(30));
+    public function recentMonthHistoryQuerySearchPage($idIndex, $idClient) {
+        return HistoryQuerySearch::where('id_index', $idIndex)->where('id_client', $idClient)->whereIn('code', 'page_search_response')->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count();
     }
 
     /**
      * @inheritDoc
      */
-    public function recentMonthHistoryQuerySearchSuggestion() {
-        return $this->hasMany(HistoryQuerySearch::class, 'id_index', 'id')->where('code', 'suggestion_feed_response')->where('created_at', '>=', now()->subDays(30));
+    public function recentMonthHistoryQuerySearchSuggestion($idIndex, $idClient) {
+        return HistoryQuerySearch::where('id_index', $idIndex)->where('id_client', $idClient)->whereIn('code', 'suggestion_feed_response')->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count();
     }
 }
