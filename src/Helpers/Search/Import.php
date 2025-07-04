@@ -1718,7 +1718,9 @@ class Import
             }
         }
 
-        $this->disabledAttributtesNoProccess($attributesProccess, $currentClient->id);
+        if ($this->coreHttp->prefix == "_production") {
+            $this->disabledAttributtesNoProccess($attributesProccess, $currentClient->id);
+        }
     }
 
     /**
