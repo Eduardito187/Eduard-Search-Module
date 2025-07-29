@@ -58,6 +58,7 @@ class Core
 
             $query = $body["query"];
             $filters = null;
+            $deepSearch = true;
             $index = $this->getIndexByApiKey($header["api-key"][0]);
             $customerUuid = $header["customer-uuid"][0];
             $limit_search = $body["limit_search"] ?? $this->indexConfiguration->limit_product_feed;
@@ -66,6 +67,10 @@ class Core
 
             if (isset($body["filters"])) {
                 $filters = $body["filters"];
+            }
+
+            if (isset($body["deepSearch"])) {
+                $deepSearch = $body["deepSearch"];
             }
 
             $attributesSearch = $this->getSearchAttributesByIndex($index);
@@ -79,7 +84,7 @@ class Core
             $responseProductIds = [];
 
             if ($backupQuery == null) {
-                $idProductList = $this->searchInIndexProducts($index->id, $query);
+                $idProductList = $this->searchInIndexProducts($index->id, $query, $deepSearch, $limit_search);
 
                 if (count($idProductList) > 0) {
                     $this->setBackupQuery($index->id, $customerUuid, $query, $idProductList, $filters);
@@ -260,14 +265,19 @@ class Core
     /**
      * @inheritDoc
      */
-    public function searchInIndexProducts($index, $query)
+    public function searchInIndexProducts($index, $query, $deepSearch = true, $limitSearch = 0)
     {
         if (strlen($query) < 2) return [];
 
         if ($this->isValidCustomString($query)) {
-            return IndexProducts::where('id_index_catalog', $index)
-                ->where('value', 'like', "%$query%")->where('status', 1)->orderBy('index_priority', 'desc')
-                ->pluck('id_product')->unique()->values()->toArray();
+            $queryBuilder = IndexProducts::where('id_index_catalog', $index)
+                ->where('value', 'like', "%$query%")->where('status', 1)->orderBy('index_priority', 'desc');
+
+            if (!$deepSearch) {
+                $queryBuilder->limit($limitSearch);
+            }
+
+            return $queryBuilder->pluck('id_product')->unique()->values()->toArray();
         } else {
             $queryTerms = array_filter(
                 explode(' ', strtolower($query)),
@@ -277,10 +287,14 @@ class Core
             $filteredTerms = array_values(array_diff($queryTerms, $stopWords));
             
             $fulltextQuery = implode('* +', $filteredTerms) . '*';
-            
-            return IndexProducts::where('id_index_catalog', $index)
-                ->whereRaw("MATCH(value) AGAINST (? IN BOOLEAN MODE)", ["+$fulltextQuery"])->where('status', 1)->orderBy('index_priority', 'desc')
-                ->pluck('id_product')->unique()->values()->toArray();
+            $queryBuilder = IndexProducts::where('id_index_catalog', $index)
+                ->whereRaw("MATCH(value) AGAINST (? IN BOOLEAN MODE)", ["+$fulltextQuery"])->where('status', 1)->orderBy('index_priority', 'desc');
+
+            if (!$deepSearch) {
+                $queryBuilder->limit($limitSearch);
+            }
+
+            return $queryBuilder->pluck('id_product')->unique()->values()->toArray();
         }
     }
 
