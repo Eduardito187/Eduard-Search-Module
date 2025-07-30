@@ -303,7 +303,7 @@ class Core
      */
     public function isValidCustomString($query)
     {
-        if (!preg_match('/^[a-zA-Z0-9_-]+$/', $query)) {
+        if (!preg_match('/^[a-zA-Z0-9_.-]+$/', $query)) {
             return false;
         }
     
