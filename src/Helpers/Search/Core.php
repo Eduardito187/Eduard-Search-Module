@@ -286,7 +286,7 @@ class Core
             $stopWords = ['el', 'la', 'los', 'las', 'de', 'y', 'en', 'a', 'un', 'una', 'que', 'con', 'por', 'para', 'se', 'al', 'del'];
             $filteredTerms = array_values(array_diff($queryTerms, $stopWords));
             
-            $fulltextQuery = '+'.implode('* +', $filteredTerms) . '*';
+            $fulltextQuery = implode('* +', $filteredTerms) . '*';
             $queryBuilder = IndexProducts::where('id_index_catalog', $index)
                 ->whereRaw("MATCH(value) AGAINST (? IN BOOLEAN MODE)", ["+$fulltextQuery"])->where('status', 1)->orderBy('index_priority', 'desc');
 
