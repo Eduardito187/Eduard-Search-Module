@@ -267,6 +267,8 @@ class Core
      */
     public function searchInIndexProducts($index, $query, $deepSearch = true, $limitSearch = 0)
     {
+        $query = $this->clearQuery($query);
+
         if (strlen($query) < 2) return [];
 
         if ($this->isValidCustomString($query)) {
@@ -296,6 +298,14 @@ class Core
 
             return $queryBuilder->pluck('id_product')->unique()->values()->toArray();
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function clearQuery($query)
+    {
+        return preg_replace('/[\*\[\]\$!\?]/', '', $query);
     }
 
     /**
