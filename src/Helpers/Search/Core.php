@@ -313,14 +313,14 @@ class Core
      */
     public function isValidCustomString($query)
     {
-        if (!preg_match('/^[a-zA-Z0-9_.-]+$/', $query)) {
+        if (!preg_match('/^[a-zA-Z0-9_.-]+$/', $query) && strpos($query, ' ') !== false) {
             return false;
         }
-    
-        if (preg_match('/^[a-zA-Z]+$/', $query)) {
+
+        if (preg_match('/^[a-zA-Z]+$/', $query) && strpos($query, ' ') !== false) {
             return false;
         }
-    
+
         return true;
     }
 
