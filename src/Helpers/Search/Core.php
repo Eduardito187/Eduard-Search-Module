@@ -56,7 +56,7 @@ class Core
                 throw new Exception("Parametro de busqueda no valido.");
             }
 
-            $query = $body["query"];
+            $query = $this->clearQuerySearch($body["query"]);
             $filters = null;
             $deepSearch = true;
             $index = $this->getIndexByApiKey($header["api-key"][0]);
@@ -179,7 +179,7 @@ class Core
                 throw new Exception("Parametro de busqueda no valido.");
             }
 
-            $query = $body["query"];
+            $query = $this->clearQuerySearch($body["query"]);
             $filters = null;
             $pagination = 1;
             $index = $this->getIndexByApiKey($header["api-key"][0]);
@@ -260,6 +260,22 @@ class Core
         } catch (Exception $e) {
             return $this->coreHttp->constructResponse([], $e->getMessage(), 500, false);
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function clearQuerySearch($query)
+    {
+        $stopWords = ['el', 'la', 'los', 'las', 'de', 'y', 'en', 'a', 'un', 'una', 'que', 'con', 'por', 'para', 'se', 'al', 'del'];
+        $query = mb_strtolower($query, 'UTF-8');
+        $words = preg_split('/\s+/', trim($query));
+
+        $filtered = array_filter($words, function ($word) use ($stopWords) {
+            return !in_array($word, $stopWords);
+        });
+
+        return implode(' ', $filtered);
     }
 
     /**
@@ -350,7 +366,7 @@ class Core
                 throw new Exception("Parametro de busqueda no valido.");
             }
 
-            $query = $body["query"];
+            $query = $this->clearQuerySearch($body["query"]);
             $filters = null;
             $index = $this->getIndexByApiKey($header["api-key"][0]);
 
