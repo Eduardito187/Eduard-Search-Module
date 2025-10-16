@@ -301,10 +301,8 @@ class Core
                 explode(' ', strtolower($query)),
                 fn($term) => strlen($term) >= 2
             );
-            $stopWords = ['el', 'la', 'los', 'las', 'de', 'y', 'en', 'a', 'un', 'una', 'que', 'con', 'por', 'para', 'se', 'al', 'del'];
-            $filteredTerms = array_values(array_diff($queryTerms, $stopWords));
             
-            $fulltextQuery = implode('* +', $filteredTerms) . '*';
+            $fulltextQuery = implode('* +', $queryTerms) . '*';
             $queryBuilder = IndexProducts::where('id_index_catalog', $index)
                 ->whereRaw("MATCH(value) AGAINST (? IN BOOLEAN MODE)", ["+$fulltextQuery"])->where('status', 1)->orderBy('index_priority', 'desc');
 
@@ -460,8 +458,7 @@ class Core
     public function getValueAttributeFilter($idAttribute, $idIndex, $idProducts)
     {
         return ProductAttribute::where('id_attribute', $idAttribute)->where('id_index', $idIndex)
-            ->whereIn('id_product', $idProducts)->whereNotNull('value')
-            ->distinct()->pluck('value')->toArray(); 
+            ->whereIn('id_product', $idProducts)->whereNotNull('value')->distinct()->pluck('value')->toArray();
     }
 
     /**
@@ -762,12 +759,6 @@ class Core
      */
     public function getProductsIdFilters(int $idAttribute, int $idIndex, string $query, array $excludeIds = [])
     {
-        /*
-        return ProductAttribute::where('id_attribute', $idAttribute)
-            ->where('id_index', $idIndex)->where('value', 'like', '%'.$query.'%')
-            ->whereNotIn('id_product', $excludeIds)->pluck('id_product')->unique()->toArray();
-            */
-
         return ProductAttribute::join('product_index', function ($join) use ($idAttribute, $idIndex) {
                 $join->on('product_attribute.id_product', '=', 'product_index.id_product')
                      ->on('product_attribute.id_index', '=', 'product_index.id_index');
