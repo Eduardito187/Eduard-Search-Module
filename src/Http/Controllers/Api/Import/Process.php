@@ -2,10 +2,10 @@
 
 namespace Eduard\Search\Http\Controllers\Api\Import;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Eduard\Account\Helpers\System\CoreHttp;
+use App\Http\Controllers\Controller;
 use Eduard\Search\Helpers\Search\Import;
+use Eduard\Account\Helpers\System\CoreHttp;
 
 class Process extends Controller
 {
