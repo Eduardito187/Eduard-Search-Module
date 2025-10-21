@@ -587,7 +587,7 @@ class Core
             if (isset($productsAttributes["price"])) {
                 $itemsResponse[$productData->id] = array_merge(
                     array(
-                        "enitity" => $productData->id,
+                        "entity" => $productData->id,
                         "name" => $productData->name,
                         "sku" => $productData->sku,
                         "image" => $this->getPicturesProduct($productData->id, $indexId)
