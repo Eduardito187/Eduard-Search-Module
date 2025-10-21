@@ -3,11 +3,13 @@
 namespace Eduard\Search\Helpers\Search;
 
 use Exception;
+use Ramsey\Uuid\Uuid;
 use Eduard\Search\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Eduard\Search\Models\Attributes;
 use Eduard\Search\Models\BackupQuery;
 use Illuminate\Support\Facades\Event;
+use Eduard\Search\Models\ProductMedia;
 use Eduard\Search\Models\IndexCatalog;
 use Eduard\Search\Models\ProductIndex;
 use Eduard\Search\Models\IndexProducts;
@@ -20,7 +22,6 @@ use Eduard\Account\Helpers\System\CoreHttp;
 use Eduard\Search\Models\FiltersAttributes;
 use Eduard\Search\Models\IndexConfiguration;
 use Eduard\Search\Models\AttributeFilterType;
-use Eduard\Search\Models\ProductMedia;
 
 class Core
 {
@@ -54,6 +55,14 @@ class Core
 
             if (!is_array($body) || !isset($body["query"])) {
                 throw new Exception("Parametro de busqueda no valido.");
+            }
+
+            $request_uuid = null;
+
+            if (!array_key_exists("request-uuid", $header)) {
+                $request_uuid = Uuid::uuid7()->toString();
+            } else {
+                $request_uuid = $header["request-uuid"][0];
             }
 
             $query = $this->clearQuerySearch($body["query"]);
@@ -108,7 +117,8 @@ class Core
                     count($responseProductIds),
                     (($searchTimeEnd - Session::get('start_time')) * 1000),
                     "feed_response",
-                    json_encode($responseProductIds)
+                    json_encode($responseProductIds),
+                    $request_uuid
                 )
             );
 
@@ -128,7 +138,8 @@ class Core
                     count($suggestionResponse),
                     (($suggestionTimeEnd - $suggestionTimeStart) * 1000),
                     "suggestion_feed_response",
-                    json_encode($suggestionResponse)
+                    json_encode($suggestionResponse),
+                    $request_uuid
                 )
             );
 
@@ -141,12 +152,14 @@ class Core
                     count($historyResponse),
                     (($historyTimeEnd - $historyTimeStart) * 1000),
                     "history_feed_response",
-                    json_encode($historyResponse)
+                    json_encode($historyResponse),
+                    $request_uuid
                 )
             );
 
             return $this->coreHttp->constructResponse(
                 [
+                    "request_uuid" => $request_uuid,
                     "products" => $responseProducts,
                     "count" => count($responseProductIds),
                     "total" => count($idProductList),
@@ -177,6 +190,14 @@ class Core
 
             if (!is_array($body) || !isset($body["query"])) {
                 throw new Exception("Parametro de busqueda no valido.");
+            }
+
+            $request_uuid = null;
+
+            if (!array_key_exists("request-uuid", $header)) {
+                $request_uuid = Uuid::uuid7()->toString();
+            } else {
+                $request_uuid = $header["request-uuid"][0];
             }
 
             $query = $this->clearQuerySearch($body["query"]);
@@ -241,12 +262,14 @@ class Core
                     count($responseProductIds),
                     (($searchTimeEnd - Session::get('start_time')) * 1000),
                     "page_search_response",
-                    json_encode($responseProductIds)
+                    json_encode($responseProductIds),
+                    $request_uuid
                 )
             );
     
             return $this->coreHttp->constructResponse(
                 [
+                    "request_uuid" => $request_uuid,
                     "products" => $responseProducts,
                     "count" => count($responseProductIds),
                     "total" => count($idProductList),
@@ -564,6 +587,7 @@ class Core
             if (isset($productsAttributes["price"])) {
                 $itemsResponse[$productData->id] = array_merge(
                     array(
+                        "enitity" => $productData->id,
                         "name" => $productData->name,
                         "sku" => $productData->sku,
                         "image" => $this->getPicturesProduct($productData->id, $indexId)
@@ -594,6 +618,16 @@ class Core
             uksort($itemsResponse, function ($a, $b) use ($rankingSortable) {
                 return array_search($a, $rankingSortable) - array_search($b, $rankingSortable);
             });
+
+            $rank = 1;
+            foreach ($itemsResponse as $k => &$item) {
+                if (is_array($item)) {
+                    $item['rank'] = $rank++;
+                } else {
+                    $item->rank = $rank++;
+                }
+            }
+            unset($item);
         }
 
         return array_values($itemsResponse);
