@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Eduard\Search\Http\Controllers\Api\Import\Process;
 use Eduard\Search\Http\Controllers\Api\Search\Product;
+use Eduard\Search\Http\Controllers\Api\Events\SearchClick;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,4 +40,6 @@ Route::prefix('api')->middleware(['custom.token'])->group(function () {
         Route::post('import/deleteSingleProduct', 'deleteSingleProduct');
         Route::post('import/deleteCollectionProduct', 'deleteCollectionProduct');
     });
+
+    Route::post('/search/click', [SearchClick::class, 'store']);
 });
