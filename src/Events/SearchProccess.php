@@ -51,12 +51,26 @@ class SearchProccess
     public $values;
 
     /**
+     * @var string
+     */
+    public $requestUuid;
+
+    /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($idClient, $idIndex, $customerUuid, $query, $countItems, $timeExecution, $code, $values)
-    {
+    public function __construct(
+        $idClient,
+        $idIndex,
+        $customerUuid,
+        $query,
+        $countItems,
+        $timeExecution,
+        $code,
+        $values,
+        $requestUuid
+    ) {
         $this->idClient = $idClient;
         $this->idIndex = $idIndex;
         $this->customerUuid = $customerUuid;
@@ -65,6 +79,7 @@ class SearchProccess
         $this->timeExecution = $timeExecution;
         $this->code = $code;
         $this->values = $values;
+        $this->requestUuid = $requestUuid;
     }
 
     /**
