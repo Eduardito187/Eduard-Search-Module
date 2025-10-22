@@ -40,6 +40,11 @@ class Core
      */
     public $coreHttp;
 
+    /**
+     * @var string
+     */
+    public $requestUuid = "";
+
     public function __construct(CoreHttp $coreHttp) {
         $this->coreHttp = $coreHttp;
     }
@@ -57,12 +62,12 @@ class Core
                 throw new Exception("Parametro de busqueda no valido.");
             }
 
-            $request_uuid = null;
+            $this->requestUuid = null;
 
             if (!array_key_exists("request-uuid", $header)) {
-                $request_uuid = Uuid::uuid7()->toString();
+                $this->requestUuid = Uuid::uuid7()->toString();
             } else {
-                $request_uuid = $header["request-uuid"][0];
+                $this->requestUuid = $header["request-uuid"][0];
             }
 
             $query = $this->clearQuerySearch($body["query"]);
@@ -118,7 +123,7 @@ class Core
                     (($searchTimeEnd - Session::get('start_time')) * 1000),
                     "feed_response",
                     json_encode($responseProductIds),
-                    $request_uuid
+                    $this->requestUuid
                 )
             );
 
@@ -139,7 +144,7 @@ class Core
                     (($suggestionTimeEnd - $suggestionTimeStart) * 1000),
                     "suggestion_feed_response",
                     json_encode($suggestionResponse),
-                    $request_uuid
+                    $this->requestUuid
                 )
             );
 
@@ -153,13 +158,13 @@ class Core
                     (($historyTimeEnd - $historyTimeStart) * 1000),
                     "history_feed_response",
                     json_encode($historyResponse),
-                    $request_uuid
+                    $this->requestUuid
                 )
             );
 
             return $this->coreHttp->constructResponse(
                 [
-                    "request_uuid" => $request_uuid,
+                    "request_uuid" => $this->requestUuid,
                     "products" => $responseProducts,
                     "count" => count($responseProductIds),
                     "total" => count($idProductList),
@@ -192,12 +197,12 @@ class Core
                 throw new Exception("Parametro de busqueda no valido.");
             }
 
-            $request_uuid = null;
+            $this->requestUuid = null;
 
             if (!array_key_exists("request-uuid", $header)) {
-                $request_uuid = Uuid::uuid7()->toString();
+                $this->requestUuid = Uuid::uuid7()->toString();
             } else {
-                $request_uuid = $header["request-uuid"][0];
+                $this->requestUuid = $header["request-uuid"][0];
             }
 
             $query = $this->clearQuerySearch($body["query"]);
@@ -263,13 +268,13 @@ class Core
                     (($searchTimeEnd - Session::get('start_time')) * 1000),
                     "page_search_response",
                     json_encode($responseProductIds),
-                    $request_uuid
+                    $this->requestUuid
                 )
             );
     
             return $this->coreHttp->constructResponse(
                 [
-                    "request_uuid" => $request_uuid,
+                    "request_uuid" => $this->requestUuid,
                     "products" => $responseProducts,
                     "count" => count($responseProductIds),
                     "total" => count($idProductList),
@@ -618,17 +623,17 @@ class Core
             uksort($itemsResponse, function ($a, $b) use ($rankingSortable) {
                 return array_search($a, $rankingSortable) - array_search($b, $rankingSortable);
             });
-
-            $rank = 1;
-            foreach ($itemsResponse as $k => &$item) {
-                if (is_array($item)) {
-                    $item['rank'] = $rank++;
-                } else {
-                    $item->rank = $rank++;
-                }
-            }
-            unset($item);
         }
+
+        $rank = 1;
+        foreach ($itemsResponse as $k => &$item) {
+            if (is_array($item)) {
+                $item['rank'] = $rank++;
+            } else {
+                $item->rank = $rank++;
+            }
+        }
+        unset($item);
 
         return array_values($itemsResponse);
     }
