@@ -28,12 +28,12 @@ class Core
     /**
      * @var IndexConfiguration|null
      */
-    protected $indexConfiguration = null;
+    public $indexConfiguration = null;
 
     /**
      * @var string|null
      */
-    protected $currentValue;
+    public $currentValue;
 
     /**
      * @var CoreHttp
@@ -109,8 +109,8 @@ class Core
                 $idProductList = json_decode($backupQuery->list_products);
                 $responseProductIds = array_slice($idProductList, 0, $limit_search);
             }
-
-            $responseProducts = $this->responseProducts($responseProductIds, $index);
+            //feed => url_key, special_price, price, value_suscription
+            $responseProducts = $this->responseProducts($responseProductIds, $index, ['url_key', 'special_price', 'price', 'value_suscription'], false);
             $searchTimeEnd = microtime(true);
 
             Event::dispatch(
@@ -254,8 +254,8 @@ class Core
                 $idProductList = json_decode($backupQuery->list_products);
                 $responseProductIds = array_slice($idProductList, (($pagination - 1) * $this->indexConfiguration->page_limit), $this->indexConfiguration->page_limit);
             }
-
-            $responseProducts = $this->responseProducts($responseProductIds, $index);
+            //result => value_suscription
+            $responseProducts = $this->responseProducts($responseProductIds, $index, ['value_suscription', 'price'], false);
             $searchTimeEnd = microtime(true);
 
             Event::dispatch(
@@ -364,15 +364,6 @@ class Core
         }
 
         return true;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function searchInIndexProductsTake($index, $query, $take = 1)
-    {
-        return IndexProducts::where('id_index_catalog', $index)->where('value', 'like', '%' . $query . '%')->where('status', 1)->orderBy('index_priority', 'desc')
-        ->pluck('id_product')->unique()->values()->take($take)->toArray();
     }
 
     /**
@@ -508,9 +499,11 @@ class Core
     /**
      * @param array $productsId
      * @param IndexCatalog $index
+     * @param array $attributesValid
+     * @param bool $simplify
      * @return array
      */
-    public function responseProducts(array $productsId, IndexCatalog $index)
+    public function responseProducts(array $productsId, IndexCatalog $index, array $attributesValid, bool $simplify = false)
     {
         if (count($productsId) == 0) {
             return [];
@@ -524,34 +517,7 @@ class Core
             $rankingSortable[$value] = [];
         }
 
-        return $this->getValuesProduct($rankingSortable, $products, $index->id, $index->id_client);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function existInRulesExclude($idAttribute, $value, $allRules)
-    {
-        foreach ($allRules as $key => $rule) {
-            if ($rule->id_attribute == $idAttribute) {
-                switch ($rule->id_condition) {
-                    case 1:
-                        return $value >= $rule->value;
-                    case 2:
-                        return $value > $rule->value;
-                    case 3:
-                        return $value <= $rule->value;
-                    case 4:
-                        return $value < $rule->value;
-                    case 5:
-                        return $value == $rule->value;
-                    default:
-                        return false;
-                }
-            }
-        }
-
-        return false;
+        return $this->getValuesProduct($rankingSortable, $products, $index->id, $index->id_client, $attributesValid, $simplify);
     }
 
     /**
@@ -559,14 +525,17 @@ class Core
      * @param mixed $products
      * @param int $indexId
      * @param int $clientId
+     * @param array $attributesValid
+     * @param bool $simplify
      * @return array
      */
-    public function getValuesProduct(array $rankingSortable, mixed $products, int $indexId, int $clientId)
+    public function getValuesProduct(array $rankingSortable, mixed $products, int $indexId, int $clientId, array $attributesValid, bool $simplify = false)
     {
+        //native => entity, name, sku, image
         $itemsResponse = [];
         $numberFormat = [];
     	$arrayFormat = [];
-        $allAttributes = $this->getAllAtributesIdEnabled($clientId);
+        $allAttributes = $this->getAllAtributesIdEnabled($clientId, $attributesValid);
         $price = Attributes::where('code', 'price')->where('id_client', $clientId)->first();
         $specialPrice = Attributes::where('code', 'special_price')->where('id_client', $clientId)->first();
         $numberFormat = [$price->id, $specialPrice->id];
@@ -589,16 +558,24 @@ class Core
                 }
             }
 
-            if (isset($productsAttributes["price"])) {
-                $itemsResponse[$productData->id] = array_merge(
-                    array(
+            if (isset($productsAttributes["price"]) || $simplify) {
+                $tmpEntity = [];
+
+                if ($simplify) {
+                    $tmpEntity = array(
+                        "entity" => $productData->id,
+                        "sku" => $productData->sku
+                    );
+                } else {
+                    $tmpEntity = array(
                         "entity" => $productData->id,
                         "name" => $productData->name,
                         "sku" => $productData->sku,
                         "image" => $this->getPicturesProduct($productData->id, $indexId)
-                    ),
-                    $productsAttributes
-                );
+                    );
+                }
+
+                $itemsResponse[$productData->id] = array_merge($tmpEntity, $productsAttributes);
             }
         }
 
@@ -747,25 +724,9 @@ class Core
     /**
      * @return array
      */
-    public function getAllAtributesIdEnabled($idClient)
+    public function getAllAtributesIdEnabled($idClient, $attributesValid)
     {
-        return Attributes::where('status', true)->where('id_client', $idClient)->pluck('id')->unique()->toArray();
-    }
-
-    /**
-     * @return array
-     */
-    public function getProductsIndexFilters($ids, $idIndex)
-    {
-        return ProductIndex::where('status', true)->where('id_index', $idIndex)->whereIn('id_product', $ids)->pluck('id_product')->unique()->toArray();
-    }
-
-    /**
-     * @return array
-     */
-    public function getProductsFilters($ids)
-    {
-        return Product::where('status', true)->whereIn('id', $ids)->pluck('id')->unique()->toArray();
+        return Attributes::where('status', true)->where('id_client', $idClient)->whereIn('code', $attributesValid)->pluck('id')->unique()->toArray();
     }
 
     /**
@@ -790,30 +751,6 @@ class Core
     }
 
     /**
-     * @param int $idAttribute
-     * @param int $idIndex
-     * @param string $query
-     * @param array $excludeIds
-     * @return array
-     */
-    public function getProductsIdFilters(int $idAttribute, int $idIndex, string $query, array $excludeIds = [])
-    {
-        return ProductAttribute::join('product_index', function ($join) use ($idAttribute, $idIndex) {
-                $join->on('product_attribute.id_product', '=', 'product_index.id_product')
-                     ->on('product_attribute.id_index', '=', 'product_index.id_index');
-            })
-            ->where('product_attribute.id_attribute', $idAttribute)
-            ->where('product_attribute.id_index', $idIndex)
-            ->where('product_attribute.value', 'like', '%' . $query . '%')
-            ->where('product_index.status', 1)
-            ->whereNotIn('product_attribute.id_product', $excludeIds)
-            ->pluck('product_attribute.id_product')
-            ->unique()
-            ->toArray();
-        
-    }
-
-    /**
      * @param int $idProduct
      * @return array
      */
@@ -830,20 +767,6 @@ class Core
         }
 
         return [$product->sku, $product->name];
-    }
-
-    /**
-     * @param int $idClient
-     * @param string $parametter
-     * @param array $excludeIds
-     * @return array
-     */
-    public function getProductsLike(int $idClient, string $parametter, array $excludeIds = [])
-    {
-        return Product::where('id_client', $idClient)->where('status', 1)->whereNotIn('id', $excludeIds)->where(function ($query) use ($parametter) {
-            $query->where('sku', 'like', '%'.$parametter.'%')
-                  ->orWhere('name', 'like', '%'.$parametter.'%');
-            })->pluck('id')->unique()->toArray();
     }
 
     /**
