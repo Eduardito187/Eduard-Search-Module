@@ -3,8 +3,10 @@
 namespace Eduard\Search\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Eduard\Search\Models\IndexConfiguration;
+use Illuminate\Database\Eloquent\Builder;
+use Eduard\Search\Models\IndexProducts;
+use Illuminate\Database\Eloquent\Model;
 use Eduard\Search\Models\ProductIndex;
 use Eduard\Account\Models\Client;
 
@@ -19,6 +21,22 @@ class IndexCatalog extends Model
     public $incrementing = true;
     protected $keyType = 'integer';
     public $timestamps = false;
+
+    /**
+     * @inheritDoc
+     */
+    public function indexProducts()
+    {
+        return $this->hasMany(IndexProducts::class, 'id_index_catalog', 'id');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function scopeWithIndexProductsCount(Builder $query): Builder
+    {
+        return $query->withCount(['indexProducts as count_product']);
+    }
 
     /**
      * @inheritDoc
